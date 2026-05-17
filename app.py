@@ -50,8 +50,8 @@ except Exception as e:
 
 # Phase 3: AI 核心功能
 try:
-    from phase3_ai_chat_api import phase3_chat_bp
-    app.register_blueprint(phase3_chat_bp)
+    from phase3_ai_chat_api import phase3_bp
+    app.register_blueprint(phase3_bp)
     print("✅ Phase 3 AI 对话 API 已注册")
 except Exception as e:
     print(f"⚠️ Phase 3 AI 对话 API 未加载：{e}")
@@ -69,6 +69,14 @@ try:
     print("✅ Phase 3 合同审阅 API 已注册")
 except Exception as e:
     print(f"⚠️ Phase 3 合同审阅 API 未加载：{e}")
+
+# Phase 3: AI 核心功能
+try:
+    from phase3_ai_chat_api import phase3_bp
+    app.register_blueprint(phase3_bp)
+    print("✅ Phase 3 AI 对话 API 已注册")
+except Exception as e:
+    print(f"⚠️ Phase 3 AI 对话 API 未加载：{e}")
 
 # Phase 4: 用户系统
 try:
