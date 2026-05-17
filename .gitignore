@@ -1,11 +1,12 @@
-venv/
+# Python
 __pycache__/
-*.pyc
-.env
-.DS_Store
-*.db
-*.log
-.pytest_cache/
-node_modules/
-dist/
-build/
+*.py[cod]
+*.env
+venv/
+
+# IDE
+.vscode/
+.idea/
+
+# Secrets
+docs/SECRETS.md
