@@ -1,0 +1,85 @@
+{
+  "meta": {
+    "project": "心海法律 AI",
+    "version": "1.0",
+    "last_sync": "2026-05-17T18:50:00+08:00",
+    "synced_by": "COO (WeChat)",
+    "memory_system": "Hindsight Cloud ✓"
+  },
+  
+  "hindsight_cloud": {
+    "status": "✅ 已启用",
+    "api_url": "https://api.hindsight.vectorize.io",
+    "api_key": "hsk_87ff310d8059c5a1729da76b879abbf5_370e60b8e570220c",
+    "bank_id": "xinclaw_coo",
+    "memory_count": 21,
+    "python_package": "hindsight-client>=0.6.2",
+    "tool_path": "/home/admin/xinhai_legal_api/hindsight_memory.py",
+    "guide_path": "/home/admin/xinhai_legal_api/HINDSIGHT_MEMORY_GUIDE.md"
+  },
+  
+  "server": {
+    "ip": "8.218.93.213",
+    "ssh_user": "root",
+    "ssh_password": "Chen0812*",
+    "api_port": 5000,
+    "api_path": "/home/admin/xinhai_legal_api",
+    "database": "/home/admin/xinhai_legal_api/data/xinhai_legal.db"
+  },
+  
+  "development_progress": {
+    "Phase 2": {"status": "✅ 完成", "files": 4, "lines": 50160, "completed": "2026-05-17 17:09"},
+    "Phase 3": {"status": "✅ 完成", "files": 2, "lines": 35793, "completed": "2026-05-17 18:21"},
+    "Phase 4": {"status": "✅ 完成", "files": 1, "lines": 19897, "completed": "2026-05-17 17:15"},
+    "Phase 5": {"status": "✅ 完成", "files": 1, "lines": 17394, "completed": "2026-05-17 17:45"},
+    "Phase 6": {"status": "✅ 完成", "files": 1, "lines": 13126, "completed": "2026-05-17 01:38"},
+    "Phase 7": {"status": "✅ 完成", "files": 1, "lines": 28247, "completed": "2026-05-17 01:40"},
+    "Phase 8": {"status": "✅ 完成", "files": 1, "lines": 5867, "completed": "2026-05-17 11:37"},
+    "Phase 9": {"status": "✅ 完成", "files": 1, "lines": 23846, "completed": "2026-05-17 01:54"},
+    "Phase 10": {"status": "✅ 完成", "files": 1, "lines": 13962, "completed": "2026-05-17 01:56"},
+    "Phase 11": {"status": "✅ 完成", "files": 1, "lines": 11377, "completed": "2026-05-17 02:14"},
+    "Phase 13": {"status": "✅ 完成", "files": 1, "lines": 4100, "completed": "2026-05-17 02:20"}
+  },
+  
+  "pending_work": {
+    "Phase 3 合同审阅": {"priority": "P1", "status": "待开发", "estimated_hours": 2},
+    "小程序登录修复": {"priority": "P0", "status": "等待 Console 日志", "assigned": "桌面助理"},
+    "图片识别 API 401": {"priority": "P1", "status": "待修复", "assigned": "COO"}
+  },
+  
+  "key_files": {
+    "api_main": "/home/admin/xinhai_legal_api/app.py",
+    "database": "/home/admin/xinhai_legal_api/data/xinhai_legal.db",
+    "hindsight_tool": "/home/admin/xinhai_legal_api/hindsight_memory.py",
+    "hindsight_guide": "/home/admin/xinhai_legal_api/HINDSIGHT_MEMORY_GUIDE.md",
+    "coo_memory": "/home/admin/.hermes/COO_MEMORY.md",
+    "miniprogram_root": "/home/admin/xinclaw-code/miniprogram",
+    "h5_root": "/var/www/xinclaw-chat"
+  },
+  
+  "services": {
+    "flask_api": {"status": "running", "port": 5000},
+    "nginx": {"status": "running", "config": "/etc/nginx/conf.d/xinclaw.conf"},
+    "h5_site": {"status": "running", "path": "/var/www/xinclaw-chat"},
+    "hindsight_cloud": {"status": "connected", "memories": 21}
+  },
+  
+  "agents": {
+    "COO": {
+      "platform": "WeChat",
+      "role": "任务分配与协调",
+      "memory_access": "hindsight_cloud + local files"
+    },
+    "桌面助理": {
+      "platform": "Local Desktop",
+      "role": "本地开发协助",
+      "memory_access": "hindsight_cloud + local files"
+    }
+  },
+  
+  "sync_instructions": {
+    "hindsight_cloud": "使用 hindsight_memory.py 工具读写云端记忆",
+    "local_files": "读写 /home/admin/xinhai_legal_api/SHARED_MEMORY.json",
+    "conflict_resolution": "Hindsight Cloud 优先，本地文件为备用"
+  }
+}

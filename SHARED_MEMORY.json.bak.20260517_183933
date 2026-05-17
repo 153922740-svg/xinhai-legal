@@ -1,0 +1,157 @@
+{
+  "project": "心海法律 AI",
+  "role": "COO + 桌面助理 共享记忆",
+  "last_sync": "2026-05-17T18:38:39.137306",
+  "server": {
+    "ip": "8.218.93.213",
+    "ssh_user": "root",
+    "ssh_password": "Chen0812*",
+    "api_port": 5000,
+    "api_path": "/home/admin/xinhai_legal_api"
+  },
+  "phase_progress": {
+    "Phase 2": {
+      "status": "✅",
+      "modules": [
+        "会员",
+        "Token",
+        "支付",
+        "看板"
+      ],
+      "completed_at": "2026-05-17 17:09"
+    },
+    "Phase 3": {
+      "status": "✅",
+      "modules": [
+        "AI 对话",
+        "文书生成"
+      ],
+      "completed_at": "2026-05-17 18:21"
+    },
+    "Phase 3 合同审阅": {
+      "status": "❌",
+      "modules": [],
+      "note": "待开发"
+    },
+    "Phase 4": {
+      "status": "✅",
+      "modules": [
+        "用户认证"
+      ],
+      "completed_at": "2026-05-17 17:15"
+    },
+    "Phase 5": {
+      "status": "✅",
+      "modules": [
+        "输入增强"
+      ],
+      "completed_at": "2026-05-17 17:45"
+    },
+    "Phase 6": {
+      "status": "✅",
+      "modules": [
+        "自进化"
+      ],
+      "completed_at": "2026-05-17 01:38"
+    },
+    "Phase 7": {
+      "status": "✅",
+      "modules": [
+        "合伙人"
+      ],
+      "completed_at": "2026-05-17 01:40"
+    },
+    "Phase 8": {
+      "status": "✅",
+      "modules": [
+        "认证"
+      ],
+      "completed_at": "2026-05-17 11:37"
+    },
+    "Phase 9": {
+      "status": "✅",
+      "modules": [
+        "积分"
+      ],
+      "completed_at": "2026-05-17 01:54"
+    },
+    "Phase 10": {
+      "status": "✅",
+      "modules": [
+        "三模型验证"
+      ],
+      "completed_at": "2026-05-17 01:56"
+    },
+    "Phase 11": {
+      "status": "✅",
+      "modules": [
+        "文书增强"
+      ],
+      "completed_at": "2026-05-17 02:14"
+    },
+    "Phase 13": {
+      "status": "✅",
+      "modules": [
+        "历史对话"
+      ],
+      "completed_at": "2026-05-17 02:20"
+    }
+  },
+  "file_paths": {
+    "api_main": "/home/admin/xinhai_legal_api/app.py",
+    "database": "/home/admin/xinhai_legal_api/data/xinhai_legal.db",
+    "miniprogram": "/home/admin/xinclaw-code/miniprogram",
+    "h5_frontend": "/var/www/xinclaw-chat",
+    "prd_docs": "/www/wwwroot/xinclaw-law/docs",
+    "backup": "/home/admin/xinclaw-backup"
+  },
+  "active_tasks": [
+    {
+      "name": "Phase 3 合同审阅开发",
+      "priority": "P1",
+      "status": "pending"
+    },
+    {
+      "name": "小程序登录修复",
+      "priority": "P0",
+      "status": "waiting_console_log"
+    },
+    {
+      "name": "图片识别 API 401 修复",
+      "priority": "P1",
+      "status": "pending"
+    }
+  ],
+  "issues": [
+    {
+      "id": 1,
+      "desc": "小程序登录失败，无明确错误",
+      "status": "排查中"
+    },
+    {
+      "id": 2,
+      "desc": "图片识别 API 返回 401",
+      "status": "待修复"
+    },
+    {
+      "id": 3,
+      "desc": "Phase 3 合同审阅未开发",
+      "status": "待开发"
+    }
+  ],
+  "agents": {
+    "COO": "首席运营官 - 任务分配与协调",
+    "桌面助理": "本地开发协助",
+    "技术团队": [
+      "蓝图",
+      "匠心",
+      "铸基",
+      "灵指",
+      "明鉴",
+      "铁壁",
+      "磐石",
+      "求索",
+      "铁卫"
+    ]
+  }
+}

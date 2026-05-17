@@ -78,17 +78,17 @@ try:
 except Exception as e:
     print(f"⚠️ Phase 3 AI 对话 API 未加载：{e}")
 
-# Phase 4: 用户系统
+# Phase 4: 用户认证
 try:
-    from phase4_user_api import phase4_user_bp
-    app.register_blueprint(phase4_user_bp)
-    print("✅ Phase 4 用户系统 API 已注册")
+    from phase4_user_auth_api import phase4_bp
+    app.register_blueprint(phase4_bp)
+    print("✅ Phase 4 用户认证 API 已注册")
 except Exception as e:
-    print(f"⚠️ Phase 4 用户系统 API 未加载：{e}")
+    print(f"⚠️ Phase 4 用户认证 API 未加载：{e}")
 
 # Phase 5: 输入增强
 try:
-    from phase5_input_enhance_api import phase5_bp
+    from phase5_input_enhance_v2 import phase5_bp
     app.register_blueprint(phase5_bp)
     print("✅ Phase 5 输入增强 API 已注册")
 except Exception as e:

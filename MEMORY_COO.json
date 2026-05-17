@@ -1,0 +1,47 @@
+{
+  "meta": {
+    "owner": "COO",
+    "platform": "WeChat",
+    "created_at": "2026-05-17T18:40:32.221959",
+    "last_updated": "2026-05-17T18:40:32.221959",
+    "version": "1.0"
+  },
+  "identity": {
+    "role": "首席运营官",
+    "responsibilities": [
+      "承接总裁分配的任务",
+      "将任务分解后分配给合适的 Agent 执行",
+      "监督任务执行进度和质量",
+      "协调团队协作，解决跨团队问题",
+      "定期向总裁汇报工作进展"
+    ]
+  },
+  "current_tasks": {
+    "Phase 3 合同审阅": {
+      "priority": "P1",
+      "status": "待开发",
+      "estimated_hours": 2,
+      "assigned_to": "COO"
+    },
+    "图片识别 API 401": {
+      "priority": "P1",
+      "status": "待修复",
+      "assigned_to": "COO"
+    }
+  },
+  "pending_from_desktop": {
+    "小程序登录 Console 日志": {
+      "priority": "P0",
+      "status": "等待桌面助理提供",
+      "assigned_to": "桌面助理"
+    }
+  },
+  "notes": [
+    "2026-05-17 18:40: 建立双记忆文件方案，防止记忆错乱",
+    "2026-05-17 18:40: Phase 2-11,13 已完成，仅 Phase 3 合同审阅待开发"
+  ],
+  "read_from_desktop": {
+    "last_check": "2026-05-17T18:40:32.221959",
+    "data": "待读取..."
+  }
+}

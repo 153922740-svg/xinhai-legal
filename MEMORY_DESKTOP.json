@@ -1,0 +1,40 @@
+{
+  "meta": {
+    "owner": "桌面助理",
+    "platform": "Local Desktop",
+    "created_at": "2026-05-17T18:40:32.221959",
+    "last_updated": "2026-05-17T18:40:32.221959",
+    "version": "1.0"
+  },
+  "identity": {
+    "role": "桌面开发助理",
+    "responsibilities": [
+      "本地代码开发",
+      "小程序调试",
+      "前端页面开发",
+      "提供 Console/Network 日志"
+    ]
+  },
+  "current_tasks": {
+    "小程序登录修复": {
+      "priority": "P0",
+      "status": "等待 Console 日志",
+      "assigned_to": "桌面助理"
+    }
+  },
+  "pending_from_coo": {
+    "Phase 3 合同审阅": {
+      "priority": "P1",
+      "status": "等待 COO 开发",
+      "assigned_to": "COO"
+    }
+  },
+  "notes": [
+    "2026-05-17 18:40: 双记忆文件方案已建立",
+    "2026-05-17 18:40: 请在此文件中写入你的记忆，COO 会读取"
+  ],
+  "read_from_coo": {
+    "last_check": "2026-05-17T18:40:32.221959",
+    "data": "待读取..."
+  }
+}
