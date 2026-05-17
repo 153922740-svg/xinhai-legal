@@ -1,0 +1,47 @@
+{
+  "generated_at": "2026-05-14T06:03:58.805806",
+  "period_days": 30,
+  "health": {
+    "timestamp": "2026-05-14 06:03:58",
+    "database_size_mb": 0.15,
+    "table_counts": {
+      "users": 2,
+      "legal_qa": 0,
+      "legal_cases": 1,
+      "knowledge_base": 30,
+      "token_transactions": 3
+    },
+    "last_24h_queries": 0,
+    "last_24h_new_users": 2,
+    "alerts": [
+      "✅ 系统运行正常，无异常"
+    ]
+  },
+  "performance": {
+    "period_days": 30,
+    "since": "2026-04-14 06:03:58",
+    "total_queries": 0,
+    "avg_confidence": 0,
+    "avg_tokens_per_query": 0,
+    "total_tokens_consumed": 0,
+    "verified_answers": 0,
+    "feedback_received": 0,
+    "by_model": {},
+    "by_domain": {}
+  },
+  "satisfaction": {
+    "total_feedback": 0,
+    "avg_score": 0,
+    "satisfaction_rate": 0,
+    "score_distribution": {},
+    "negative_feedback_count": 0,
+    "negative_feedback_sample": [],
+    "daily_trend": []
+  },
+  "ab_test": {
+    "test_groups": {},
+    "best_model_combination": null,
+    "best_composite_score": null,
+    "recommendation": "数据不足，暂无推荐"
+  }
+}
