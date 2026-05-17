@@ -1,0 +1,93 @@
+# 心海法律 AI 服务平台配置
+app:
+  name: 心海法律AI
+  version: 1.0.0
+  debug: true
+  host: 0.0.0.0
+  port: 8081
+  secret_key: xinhai-legal-secret-key-change-in-production-2024
+
+database:
+  path: data/xinhai.db
+
+chat:
+  max_context_length: 20
+  session_timeout_minutes: 30
+
+ai_models:
+  primary:
+    provider: deepseek
+    model: deepseek-v4-pro
+    base_url: https://api.deepseek.com/v1
+    api_key: "sk-fad...f690"
+    timeout: 60
+    max_retries: 3
+  secondary:
+    - name: glm-4
+      provider: zhipu
+      base_url: https://open.bigmodel.cn/api/paas/v4
+      model: glm-4-flash
+      enabled: false  # 需要配置 API key 后启用
+    - name: qwen-max
+      provider: aliyun
+      base_url: https://dashscope.aliyuncs.com/compatible-mode/v1
+      model: qwen-max
+      enabled: false
+
+# Token 计费
+pricing:
+  token_prices:
+    basic: 0.01
+    premium: 0.02
+  default_free_tokens: 1000
+  currency: "CNY"
+  tokens_per_yuan: 100000
+  membership:
+    monthly: 29.9
+    monthly_tokens: 50000
+    quarterly: 79.9
+    quarterly_tokens: 150000
+    yearly: 299.9
+    yearly_tokens: 600000
+  psych_assessment_price: 0.05
+
+# 安全配置
+security:
+  rate_limit:
+    enabled: true
+    max_requests_per_minute: 60
+  content_filter:
+    enabled: true
+    blocked_keywords: []
+
+# 代理/客服配置
+agency:
+  enabled: true
+  auto_assign: true
+  commission_rate: 0.15
+  max_agents_per_case: 3
+  commission_rates:
+    default: 0.10
+    senior: 0.15
+    expert: 0.20
+  min_withdrawal: 50
+  levels:
+    - code: junior
+      name: 初级顾问
+      min_sales: 0
+      commission_rate: 0.10
+    - code: senior
+      name: 高级顾问
+      min_sales: 50000
+      commission_rate: 0.15
+    - code: expert
+      name: 专家顾问
+      min_sales: 200000
+      commission_rate: 0.20
+
+# 推送配置
+push:
+  enabled: false
+  channels:
+    - wechat
+    - sms
