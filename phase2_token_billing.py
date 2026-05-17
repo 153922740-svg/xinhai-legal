@@ -68,7 +68,9 @@ def get_token_balance():
                 'data': None
             }), 400
         
-        user = UserModel.get_by_id(user_id)
+        db_path = '/home/admin/xinhai_legal_api/data/xinhai_legal.db'
+        
+        user = UserModel.get_by_id(db_path, user_id)
         if not user:
             return jsonify({
                 'code': 404,
@@ -214,17 +216,37 @@ def purchase_tokens():
                 'data': None
             }), 400
         
-        user_id = data.get('user_id', type=int)
-        amount_rmb = data.get('amount_rmb', type=float)
+        user_id = data.get('user_id')
+        amount_rmb = data.get('amount_rmb')
         
-        if not user_id or not amount_rmb or amount_rmb <= 0:
+        if not user_id or not amount_rmb:
             return jsonify({
                 'code': 400,
-                'message': '参数错误',
+                'message': '缺少参数 user_id 或 amount_rmb',
                 'data': None
             }), 400
         
-        user = UserModel.get_by_id(user_id)
+        # 确保类型正确
+        try:
+            user_id = int(user_id)
+            amount_rmb = float(amount_rmb)
+        except (ValueError, TypeError):
+            return jsonify({
+                'code': 400,
+                'message': '参数类型错误，user_id 必须是整数，amount_rmb 必须是数字',
+                'data': None
+            }), 400
+        
+        if amount_rmb <= 0:
+            return jsonify({
+                'code': 400,
+                'message': '充值金额必须大于 0',
+                'data': None
+            }), 400
+        
+        db_path = '/home/admin/xinhai_legal_api/data/xinhai_legal.db'
+        
+        user = UserModel.get_by_id(db_path, user_id)
         if not user:
             return jsonify({
                 'code': 404,

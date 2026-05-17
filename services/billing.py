@@ -66,7 +66,8 @@ class BillingService:
         if not plan_info:
             return None
         
-        conn = get_db()
+        db_path = '/home/admin/xinhai_legal_api/data/xinhai_legal.db'
+        conn = get_db(db_path)
         try:
             cursor = conn.execute("""
                 INSERT INTO membership_orders (user_id, plan, price, duration_days, tokens_granted, status)
@@ -83,7 +84,8 @@ class BillingService:
     
     def activate_membership(self, order_id: int) -> bool:
         """激活会员 (支付成功后调用)"""
-        conn = get_db()
+        db_path = '/home/admin/xinhai_legal_api/data/xinhai_legal.db'
+        conn = get_db(db_path)
         try:
             order = conn.execute(
                 "SELECT * FROM membership_orders WHERE id=? AND status='pending'",
@@ -143,7 +145,7 @@ class BillingService:
             conn.close()
     
     def purchase_tokens(self, user_id: int, amount_rmb: float) -> Optional[Dict]:
-        """购买Token (1元 = 1000 tokens * 单价)"""
+        """购买 Token (1 元 = 1000 tokens * 单价)"""
         user = UserModel.get_by_id(user_id)
         if not user:
             return None
@@ -155,7 +157,8 @@ class BillingService:
             return None
         
         # 创建购买记录
-        conn = get_db()
+        db_path = '/home/admin/xinhai_legal_api/data/xinhai_legal.db'
+        conn = get_db(db_path)
         try:
             success = UserModel.add_tokens(
                 user_id, tokens, 'purchase',
@@ -174,7 +177,8 @@ class BillingService:
     
     def get_usage_stats(self, user_id: int) -> Dict:
         """获取用户使用统计"""
-        conn = get_db()
+        db_path = '/home/admin/xinhai_legal_api/data/xinhai_legal.db'
+        conn = get_db(db_path)
         try:
             # 本月使用
             first_of_month = datetime.now().replace(day=1).isoformat()

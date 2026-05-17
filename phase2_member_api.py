@@ -215,13 +215,23 @@ def create_membership_order():
                 'data': None
             }), 400
         
-        user_id = data.get('user_id', type=int)
+        user_id = data.get('user_id')
         plan = data.get('plan', 'monthly')
         
         if not user_id:
             return jsonify({
                 'code': 400,
                 'message': '缺少参数 user_id',
+                'data': None
+            }), 400
+        
+        # 确保 user_id 是整数
+        try:
+            user_id = int(user_id)
+        except (ValueError, TypeError):
+            return jsonify({
+                'code': 400,
+                'message': 'user_id 必须是整数',
                 'data': None
             }), 400
         
