@@ -21,7 +21,7 @@
   "server": {
     "ip": "8.218.93.213",
     "ssh_user": "root",
-    "ssh_password": "Chen0812*",
+    "ssh_password": "***REDACTED***",
     "api_port": 5000,
     "api_path": "/home/admin/xinhai_legal_api",
     "database": "/home/admin/xinhai_legal_api/data/xinhai_legal.db"

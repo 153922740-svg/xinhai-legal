@@ -23,6 +23,7 @@
 aliyun-python-sdk-green==3.6.6
 
 # API 配置
+# 从环境变量读取，勿硬编码
 ALIYUN_ACCESS_KEY_ID=<your-access-key-id>
 ALIYUN_ACCESS_KEY_SECRET=<your-access-key-secret>
 ```

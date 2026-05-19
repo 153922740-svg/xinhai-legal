@@ -8,5 +8,18 @@ venv/
 .vscode/
 .idea/
 
+# Logs
+logs/
+
+# Database
+*.db
+*.db-shm
+*.db-wal
+
+# Backups
+*.backup
+*.backup.*
+
 # Secrets
 docs/SECRETS.md
+docs/security_scan_report.json

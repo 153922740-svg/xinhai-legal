@@ -43,8 +43,8 @@ def ocr_aliyun_http(image_path, ocr_type='general'):
     阿里云 OCR HTTP API 调用
     ocr_type: general(通用文字), idcard(身份证), bankcard(银行卡)
     """
-    access_key_id = '<your-access-key-id>'
-    access_key_secret = '<your-access-key-secret>'
+    access_key_id = os.getenv('ALIYUN_ACCESS_KEY_ID')
+    access_key_secret = os.getenv('ALIYUN_ACCESS_KEY_SECRET')
     
     # 读取图片并转 base64
     with open(image_path, 'rb') as f:
