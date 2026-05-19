@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文书生成 - 心海法律 AI</title>
+    <style>
+        :root{--bg-primary:#0a0e1a;--bg-secondary:#131825;--border:#1e2538;--text-primary:#e8eaed;--text-secondary:#94a3b8;--accent-primary:#6366f1}
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg-primary);color:var(--text-primary);min-height:100vh;padding:20px}
+        .container{max-width:800px;margin:0 auto}
+        h1{font-size:24px;margin-bottom:20px}
+        .form-group{margin-bottom:20px}
+        label{display:block;margin-bottom:8px;color:var(--text-secondary)}
+        select,input,textarea{width:100%;padding:12px;border:1px solid var(--border);border-radius:8px;background:var(--bg-secondary);color:var(--text-primary);font-size:14px}
+        textarea{min-height:120px;resize:vertical}
+        .btn{padding:15px 30px;background:linear-gradient(135deg,var(--accent-primary),#8b5cf6);color:white;border:none;border-radius:8px;font-size:16px;cursor:pointer;width:100%}
+        .result{margin-top:30px;padding:20px;background:var(--bg-secondary);border-radius:8px;white-space:pre-wrap;font-family:monospace;font-size:13px}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📄 法律文书生成</h1>
+        <div class="form-group">
+            <label>选择文书类型</label>
+            <select id="templateType">
+                <option value="civil_complaint">民事起诉状</option>
+                <option value="defense_statement">答辩状</option>
+                <option value="lawyer_letter">律师函</option>
+                <option value="rental_contract">租房合同</option>
+                <option value="loan_agreement">借款协议</option>
+                <option value="divorce_agreement">离婚协议</option>
+                <option value="labor_arbitration">劳动仲裁申请书</option>
+                <option value="assignment_agreement">债权转让协议</option>
+                <option value="settlement_agreement">和解协议</option>
+            </select>
+        </div>
+        <div id="fieldsContainer"></div>
+        <button class="btn" onclick="generateDocument()">生成文书</button>
+        <div class="result" id="result" style="display:none"></div>
+    </div>
+    <script>
+        const templates={
+            civil_complaint:[
+                {name:'plaintiff_name',label:'原告姓名',type:'text'},
+                {name:'plaintiff_info',label:'原告信息',type:'text'},
+                {name:'defendant_name',label:'被告姓名',type:'text'},
+                {name:'defendant_info',label:'被告信息',type:'text'},
+                {name:'claims',label:'诉讼请求',type:'textarea'},
+                {name:'facts',label:'事实与理由',type:'textarea'}
+            ],
+            loan_agreement:[
+                {name:'lender',label:'出借人',type:'text'},
+                {name:'borrower',label:'借款人',type:'text'},
+                {name:'amount',label:'借款金额',type:'text'},
+                {name:'repay_date',label:'还款日期',type:'text'}
+            ]
+        };
+        
+        function renderFields(){
+            const type=document.getElementById('templateType').value;
+            const fields=templates[type]||[];
+            const container=document.getElementById('fieldsContainer');
+            container.innerHTML='';
+            fields.forEach(f=>{
+                const div=document.createElement('div');
+                div.className='form-group';
+                div.innerHTML=`<label>${f.label}</label>${f.type==='textarea'?'<textarea id="'+f.name+'"></textarea>':'<input type="text" id="'+f.name+'">'}`;
+                container.appendChild(div);
+            });
+        }
+        
+        async function generateDocument(){
+            const type=document.getElementById('templateType').value;
+            const fields=templates[type]||[];
+            const data={};
+            fields.forEach(f=>data[f.name]=document.getElementById(f.name).value);
+            
+            try{
+                const r=await fetch('/api/v1/document/generate',{
+                    method:'POST',
+                    headers:{'Content-Type':'application/json'},
+                    body:JSON.stringify({user_id:1,template_type:type,fields_data:data})
+                });
+                const d=await r.json();
+                if(d.success){
+                    document.getElementById('result').style.display='block';
+                    document.getElementById('result').textContent=d.content;
+                }else{
+                    alert('生成失败：'+d.error);
+                }
+            }catch(e){alert('网络错误');}
+        }
+        
+        document.getElementById('templateType').addEventListener('change',renderFields);
+        renderFields();
+    </script>
+</body>
+</html>

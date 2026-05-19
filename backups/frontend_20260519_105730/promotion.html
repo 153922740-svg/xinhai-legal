@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>推广中心 - 心海法律 AI</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0a0e1a;
+            color: #e8eaed;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .header {
+            margin-bottom: 20px;
+        }
+        .header h1 { font-size: 24px; font-weight: 600; }
+        
+        /* 数据概览 */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+        .stat-card {
+            background: #1a1f2e;
+            border: 1px solid #1e2538;
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 28px;
+            font-weight: 600;
+            color: #6366f1;
+            margin-bottom: 4px;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #94a3b8;
+        }
+        
+        /* 推广工具 */
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+        .promo-tools {
+            background: #1a1f2e;
+            border: 1px solid #1e2538;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+        .promo-item {
+            margin-bottom: 20px;
+        }
+        .promo-item:last-child { margin-bottom: 0; }
+        .promo-label {
+            font-size: 14px;
+            color: #94a3b8;
+            margin-bottom: 8px;
+        }
+        .promo-link-box {
+            display: flex;
+            gap: 10px;
+        }
+        .promo-input {
+            flex: 1;
+            background: #131825;
+            border: 1px solid #1e2538;
+            border-radius: 8px;
+            padding: 12px;
+            color: #e8eaed;
+            font-size: 13px;
+            font-family: monospace;
+        }
+        .copy-btn {
+            background: #6366f1;
+            color: white;
+            border: none;
+            padding: 0 20px;
+            border-radius: 8px;
+            font-size: 13px;
+            cursor: pointer;
+        }
+        .qr-code {
+            width: 200px;
+            height: 200px;
+            background: #fff;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 10px 0;
+        }
+        
+        /* 下级用户 */
+        .referral-list {
+            background: #1a1f2e;
+            border: 1px solid #1e2538;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 24px;
+        }
+        .referral-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #1e2538;
+        }
+        .referral-item:last-child { border-bottom: none; }
+        .referral-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .referral-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+        .referral-name {
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .referral-date {
+            font-size: 12px;
+            color: #94a3b8;
+        }
+        .referral-contribution {
+            font-size: 13px;
+            color: #6366f1;
+        }
+        
+        /* 佣金明细 */
+        .commission-list {
+            background: #1a1f2e;
+            border: 1px solid #1e2538;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 24px;
+        }
+        .commission-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #1e2538;
+        }
+        .commission-item:last-child { border-bottom: none; }
+        .commission-info h4 {
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+        .commission-info p {
+            font-size: 12px;
+            color: #94a3b8;
+        }
+        .commission-amount {
+            font-size: 16px;
+            font-weight: 600;
+            color: #6366f1;
+        }
+        
+        /* 提现按钮 */
+        .withdraw-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+            border: none;
+            padding: 16px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #94a3b8;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📢 推广中心</h1>
+    </div>
+    
+    <!-- 数据概览 -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-value" id="todayCount">0</div>
+            <div class="stat-label">今日新增</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" id="totalCount">0</div>
+            <div class="stat-label">累计用户</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" id="totalCommission">¥0</div>
+            <div class="stat-label">佣金收益</div>
+        </div>
+    </div>
+    
+    <!-- 推广工具 -->
+    <div class="section-title">🔗 我的推广</div>
+    <div class="promo-tools">
+        <div class="promo-item">
+            <div class="promo-label">推广链接</div>
+            <div class="promo-link-box">
+                <input type="text" class="promo-input" id="promoLink" value="" readonly>
+                <button class="copy-btn" onclick="copyLink()">复制</button>
+            </div>
+        </div>
+        <div class="promo-item">
+            <div class="promo-label">推广二维码</div>
+            <div class="qr-code">
+                <span style="font-size:80px;">📱</span>
+            </div>
+            <p style="font-size:12px;color:#94a3b8;text-align:center;">扫描二维码或点击链接即可推广</p>
+        </div>
+    </div>
+    
+    <!-- 下级用户 -->
+    <div class="section-title">👥 我的团队</div>
+    <div class="referral-list" id="referralList">
+        <!-- 由 JS 加载 -->
+    </div>
+    
+    <!-- 佣金明细 -->
+    <div class="section-title">💰 佣金明细</div>
+    <div class="commission-list" id="commissionList">
+        <!-- 由 JS 加载 -->
+    </div>
+    
+    <!-- 提现按钮 -->
+    <button class="withdraw-btn" onclick="withdraw()">💸 申请提现</button>
+
+    <script>
+        // 加载推广数据
+        async function loadPromotionData() {
+            try {
+                const response = await fetch('/api/promotion/stats');
+                const data = await response.json();
+                updateStats(data.stats || {
+                    todayCount: 0,
+                    totalCount: 0,
+                    totalCommission: 0
+                });
+            } catch (e) {
+                updateStats({ todayCount: 0, totalCount: 0, totalCommission: 0 });
+            }
+        }
+        
+        function updateStats(stats) {
+            document.getElementById('todayCount').textContent = stats.todayCount || 0;
+            document.getElementById('totalCount').textContent = stats.totalCount || 0;
+            document.getElementById('totalCommission').textContent = '¥' + (stats.totalCommission || 0);
+        }
+        
+        // 设置推广链接
+        function setPromoLink() {
+            const userId = localStorage.getItem('userId') || 'demo';
+            const link = 'https://xinclaw.com/?ref=' + userId;
+            document.getElementById('promoLink').value = link;
+        }
+        
+        // 复制链接
+        function copyLink() {
+            const input = document.getElementById('promoLink');
+            input.select();
+            document.execCommand('copy');
+            alert('链接已复制！');
+        }
+        
+        // 加载下级用户
+        async function loadReferrals() {
+            try {
+                const response = await fetch('/api/promotion/referrals');
+                const data = await response.json();
+                renderReferrals(data.referrals || [
+                    {name:'张三', joinedAt:'2026-05-15', contribution:'¥29.90'},
+                    {name:'李四', joinedAt:'2026-05-14', contribution:'¥59.80'},
+                    {name:'王五', joinedAt:'2026-05-12', contribution:'¥89.70'}
+                ]);
+            } catch (e) {
+                renderReferrals([]);
+            }
+        }
+        
+        function renderReferrals(referrals) {
+            const list = document.getElementById('referralList');
+            if (referrals.length === 0) {
+                list.innerHTML = '<div class="empty-state"><p>暂无下级用户</p><p style="font-size:12px;margin-top:8px;">快去邀请好友吧！</p></div>';
+                return;
+            }
+            list.innerHTML = referrals.map(r => `
+                <div class="referral-item">
+                    <div class="referral-info">
+                        <div class="referral-avatar">👤</div>
+                        <div>
+                            <div class="referral-name">${r.name}</div>
+                            <div class="referral-date">${r.joinedAt} 加入</div>
+                        </div>
+                    </div>
+                    <div class="referral-contribution">贡献 ${r.contribution}</div>
+                </div>
+            `).join('');
+        }
+        
+        // 加载佣金明细
+        async function loadCommissions() {
+            try {
+                const response = await fetch('/api/promotion/commissions');
+                const data = await response.json();
+                renderCommissions(data.commissions || [
+                    {desc:'张三购买季卡会员', date:'2026-05-15', amount:'¥24.00'},
+                    {desc:'李四购买月卡会员', date:'2026-05-14', amount:'¥9.00'},
+                    {desc:'王五充值 100 Token', date:'2026-05-12', amount:'¥15.00'}
+                ]);
+            } catch (e) {
+                renderCommissions([]);
+            }
+        }
+        
+        function renderCommissions(commissions) {
+            const list = document.getElementById('commissionList');
+            if (commissions.length === 0) {
+                list.innerHTML = '<div class="empty-state"><p>暂无佣金记录</p></div>';
+                return;
+            }
+            list.innerHTML = commissions.map(c => `
+                <div class="commission-item">
+                    <div class="commission-info">
+                        <h4>${c.desc}</h4>
+                        <p>${c.date}</p>
+                    </div>
+                    <div class="commission-amount">${c.amount}</div>
+                </div>
+            `).join('');
+        }
+        
+        // 提现
+        function withdraw() {
+            alert('提现功能开发中，敬请期待！');
+        }
+        
+        // 初始化
+        loadPromotionData();
+        setPromoLink();
+        loadReferrals();
+        loadCommissions();
+    </script>
+</body>
+</html>

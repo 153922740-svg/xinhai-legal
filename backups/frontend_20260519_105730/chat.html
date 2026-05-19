@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 法律咨询 - 心海法律 AI</title>
+    <style>
+        :root{--bg-primary:#0a0e1a;--bg-secondary:#131825;--border:#1e2538;--text-primary:#e8eaed;--text-secondary:#94a3b8;--accent-primary:#6366f1;--success:#22c55e}
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg-primary);color:var(--text-primary);min-height:100vh;display:flex;flex-direction:column}
+        .header{padding:20px;border-bottom:1px solid var(--border);background:var(--bg-secondary);display:flex;justify-content:space-between;align-items:center}
+        .header h1{font-size:20px}
+        .header-actions{display:flex;gap:10px}
+        .header-btn{padding:8px 16px;background:var(--bg-primary);border:1px solid var(--border);border-radius:8px;color:var(--text-primary);cursor:pointer;font-size:14px}
+        .chat-container{flex:1;display:flex;overflow:hidden}
+        .messages{flex:1;overflow-y:auto;padding:20px}
+        .message{margin-bottom:20px;max-width:80%}
+        .message.user{margin-left:auto;background:var(--accent-primary);padding:15px;border-radius:12px 12px 0 12px}
+        .message.assistant{margin-right:auto;background:var(--bg-secondary);padding:15px;border-radius:12px 12px 12px 0}
+        .input-area{padding:20px;border-top:1px solid var(--border);background:var(--bg-secondary)}
+        .input-wrapper{display:flex;gap:10px;align-items:flex-end}
+        #messageInput{flex:1;padding:15px;border:1px solid var(--border);border-radius:12px;background:var(--bg-primary);color:var(--text-primary);font-size:16px;min-height:50px;resize:none}
+        #sendBtn{padding:15px 30px;background:linear-gradient(135deg,var(--accent-primary),#8b5cf6);color:white;border:none;border-radius:12px;font-size:16px;cursor:pointer}
+        .toolbar{display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+        .tool-btn{padding:10px 15px;background:var(--bg-primary);border:1px solid var(--border);border-radius:8px;color:var(--text-primary);cursor:pointer;font-size:14px;display:flex;align-items:center;gap:6px}
+        .tool-btn:hover{border-color:var(--accent-primary)}
+        .tool-btn.recording{background:var(--success);border-color:var(--success)}
+        .loading{color:var(--text-secondary);font-style:italic}
+        .token-info{font-size:12px;color:var(--text-secondary);margin-top:10px;display:flex;justify-content:space-between}
+        .hidden-input{display:none}
+        .upload-preview{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+        .preview-item{background:var(--bg-primary);border:1px solid var(--border);border-radius:8px;padding:8px;display:flex;align-items:center;gap:8px;font-size:12px}
+        .preview-item .remove{cursor:pointer;color:var(--text-secondary)}
+    </style>
+</head>
+<body>
+    <div class="header"><h1>💬 AI 法律咨询</h1><div class="header-actions"><button class="header-btn" onclick="clearChat()">🗑️ 清空</button><button class="header-btn" onclick="showHistory()">📋 历史</button></div></div>
+    <div class="chat-container"><div class="messages" id="messages"><div class="message assistant"><div>您好，我是心海法律 AI 助手，请问有什么法律问题需要咨询？</div><div style="font-size:12px;color:var(--text-secondary);margin-top:8px">💡 支持文字、语音、文件、图片多种输入方式</div><div class="token-info" style="margin-top:10px">本对话由 AI 生成，仅供参考</div></div></div></div>
+    <div class="input-area"><div class="toolbar"><button class="tool-btn" id="voiceBtn" onclick="toggleVoice()">🎤 语音</button><button class="tool-btn" onclick="document.getElementById('fileInput').click()">📁 文件</button><button class="tool-btn" onclick="document.getElementById('imageInput').click()">📸 图片</button></div><div class="upload-preview" id="uploadPreview"></div><div class="input-wrapper"><textarea id="messageInput" placeholder="输入您的法律问题..." rows="2" onkeypress="if(event.keyCode==13&&!event.shiftKey){event.preventDefault();sendMessage();}"></textarea><button id="sendBtn" onclick="sendMessage()">发送</button></div><div class="token-info" id="tokenInfo">Token 余额：加载中...</div></div>
+    <input type="file" id="fileInput" class="hidden-input" accept=".pdf,.doc,.docx,.txt" onchange="handleFileSelect(event)">
+    <input type="file" id="imageInput" class="hidden-input" accept="image/*" onchange="handleImageSelect(event)">
+    <script>
+let sessionId=null,userId=1,isRecording=false,mediaRecorder=null,audioChunks=[],selectedFile=null,selectedImage=null;
+window.onload=function(){loadTokenBalance();checkMicrophoneSupport();};
+function checkMicrophoneSupport(){if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){document.getElementById('voiceBtn').disabled=true;document.getElementById('voiceBtn').textContent='🎤 语音 (不支持)';}}
+async function loadTokenBalance(){try{const r=await fetch('/api/v1/token/balance?user_id='+userId);const d=await r.json();document.getElementById('tokenInfo').innerHTML='<span>Token 余额：'+(d.balance||0)+'</span><span onclick="window.location.href=\'/recharge.html\'" style="cursor:pointer;color:var(--accent-primary)">💰 充值</span>';}catch(e){console.error(e);}}
+async function toggleVoice(){const btn=document.getElementById('voiceBtn');if(isRecording){mediaRecorder.stop();btn.textContent='🎤 语音';btn.classList.remove('recording');isRecording=false;}else{try{const stream=await navigator.mediaDevices.getUserMedia({audio:true});mediaRecorder=new MediaRecorder(stream);audioChunks=[];mediaRecorder.ondataavailable=event=>{audioChunks.push(event.data);};mediaRecorder.onstop=async()=>{const audioBlob=new Blob(audioChunks,{type:'audio/webm'});await uploadVoice(audioBlob);};mediaRecorder.start();btn.textContent='⏹️ 停止';btn.classList.add('recording');isRecording=true;addMessage('🎤 正在录音...说完后点击"停止"按钮','assistant');}catch(e){alert('无法访问麦克风：'+e.message);}}}
+async function uploadVoice(audioBlob){addMessage('🎤 正在识别语音...','assistant loading');const formData=new FormData();formData.append('audio',audioBlob,'recording.webm');try{const r=await fetch('/api/v1/voice/recognize',{method:'POST',body:formData});const d=await r.json();document.querySelector('.message.loading')?.remove();if(d.code===200){addMessage('🎤 语音识别结果：'+d.data.text,'user');document.getElementById('messageInput').value=d.data.text;sendMessage();}else{addMessage('语音识别失败：'+d.message,'assistant');}}catch(e){document.querySelector('.message.loading')?.remove();addMessage('语音上传失败，请重试','assistant');}}
+function handleFileSelect(event){const file=event.target.files[0];if(!file)return;selectedFile=file;selectedImage=null;updateUploadPreview();}
+function handleImageSelect(event){const file=event.target.files[0];if(!file)return;selectedImage=file;selectedFile=null;updateUploadPreview();}
+function updateUploadPreview(){const preview=document.getElementById('uploadPreview');preview.innerHTML='';if(selectedFile){preview.innerHTML+='<div class="preview-item">📁 '+selectedFile.name+'<span class="remove" onclick="clearFile()">✕</span></div>';}if(selectedImage){const reader=new FileReader();reader.onload=e=>{preview.innerHTML+='<div class="preview-item"><img src="'+e.target.result+'" style="height:40px;border-radius:4px"><span class="remove" onclick="clearImage()">✕</span></div>';};reader.readAsDataURL(selectedImage);}}
+function clearFile(){selectedFile=null;document.getElementById('fileInput').value='';updateUploadPreview();}
+function clearImage(){selectedImage=null;document.getElementById('imageInput').value='';updateUploadPreview();}
+async function sendMessage(){const input=document.getElementById('messageInput');let message=input.value.trim();if(!message&&!selectedFile&&!selectedImage)return;let displayContent=message;if(selectedFile){displayContent+=(displayContent?' ':'')+'📁 附件：'+selectedFile.name;}if(selectedImage){displayContent+=(displayContent?' ':'')+'📸 图片';}addMessage(displayContent,'user');input.value='';let fileText='',imageText='';if(selectedFile){fileText=await uploadFile(selectedFile);clearFile();}if(selectedImage){imageText=await uploadImage(selectedImage);clearImage();}const fullMessage=[message,fileText,imageText].filter(t=>t).join('\n\n');const loadingId=addMessage('正在思考中...','assistant loading');try{const r=await fetch('/api/v1/ai/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:userId,message:fullMessage,session_id:sessionId})});const d=await r.json();document.getElementById(loadingId)?.remove();if(d.success){addMessage(d.response,'assistant');sessionId=d.session_id;loadTokenBalance();}else{addMessage('抱歉，出错了：'+(d.error||'未知错误'),'assistant');}}catch(e){document.getElementById(loadingId)?.remove();addMessage('网络错误，请稍后重试','assistant');}}
+async function uploadFile(file){const formData=new FormData();formData.append('file',file);try{const r=await fetch('/api/v1/file/upload',{method:'POST',body:formData});const d=await r.json();if(d.code===200){addMessage('📁 文件已上传：'+file.name+' ('+d.data.text_length+' 字)','assistant');return d.data.extracted_text;}else{addMessage('文件上传失败：'+d.message,'assistant');return'';}}catch(e){addMessage('文件上传失败','assistant');return'';}}
+async function uploadImage(file){const formData=new FormData();formData.append('image',file);try{const r=await fetch('/api/v1/image/upload',{method:'POST',body:formData});const d=await r.json();if(d.code===200){addMessage('📸 图片已上传，OCR 识别：'+d.data.ocr_text.substring(0,100)+'...','assistant');return d.data.ocr_text;}else{addMessage('图片上传失败：'+d.message,'assistant');return'';}}catch(e){addMessage('图片上传失败','assistant');return'';}}
+function addMessage(content,role){const id='msg_'+Date.now();const div=document.createElement('div');div.id=id;div.className='message '+role.split(' ')[0];div.innerHTML='<div>'+content.replace(/\n/g,'<br>')+'</div>';if(role.includes('loading'))div.classList.add('loading');document.getElementById('messages').appendChild(div);div.scrollIntoView({behavior:'smooth'});return id;}
+function clearChat(){sessionId=null;document.getElementById('messages').innerHTML='<div class="message assistant"><div>您好，我是心海法律 AI 助手，请问有什么法律问题需要咨询？</div><div class="token-info" style="margin-top:10px">本对话由 AI 生成，仅供参考</div></div>';}
+function showHistory(){alert('历史记录功能开发中...');}
+    </script>
+</body>
+</html>

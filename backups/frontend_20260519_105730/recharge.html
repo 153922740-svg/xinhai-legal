@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Token 充值 - 心海法律 AI</title>
+    <style>
+        :root{--bg-primary:#0a0e1a;--bg-secondary:#131825;--border:#1e2538;--text-primary:#e8eaed;--text-secondary:#94a3b8;--accent-primary:#6366f1;--success:#22c55e}
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg-primary);color:var(--text-primary);min-height:100vh}
+        .container{max-width:1200px;margin:0 auto;padding:20px}
+        .header{text-align:center;padding:40px 20px;background:linear-gradient(135deg,var(--bg-secondary),#1a1f2e);border-radius:16px;margin-bottom:30px}
+        .balance-card{background:var(--bg-secondary);border:1px solid var(--border);border-radius:16px;padding:30px;margin-bottom:30px;text-align:center}
+        .balance-amount{font-size:48px;font-weight:700;color:var(--accent-primary);margin:20px 0}
+        .plans-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px;margin-bottom:30px}
+        .plan-card{background:var(--bg-secondary);border:1px solid var(--border);border-radius:16px;padding:30px;cursor:pointer;transition:all 0.3s;position:relative}
+        .plan-card:hover{border-color:var(--accent-primary);transform:translateY(-4px)}
+        .plan-card.recommended{border-color:var(--accent-primary);background:linear-gradient(135deg,rgba(99,102,241,0.1),rgba(139,92,246,0.1))}
+        .plan-card.recommended::before{content:'推荐';position:absolute;top:12px;right:12px;background:var(--accent-primary);color:white;padding:4px 12px;border-radius:12px;font-size:12px;font-weight:600}
+        .plan-name{font-size:20px;font-weight:600;margin-bottom:8px}
+        .plan-price{font-size:36px;font-weight:700;color:var(--accent-primary);margin-bottom:16px}
+        .plan-tokens{font-size:16px;color:var(--text-secondary);margin-bottom:20px}
+        .btn{width:100%;padding:14px;border:none;border-radius:12px;font-size:16px;font-weight:600;cursor:pointer}
+        .btn-primary{background:linear-gradient(135deg,var(--accent-primary),#8b5cf6);color:white}
+        .btn-outline{background:transparent;border:2px solid var(--accent-primary);color:var(--accent-primary)}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header"><h1>💰 Token 充值</h1><p>充值 Token，使用 AI 法律服务</p></div>
+        <div class="balance-card">
+            <h2>当前余额</h2>
+            <div class="balance-amount" id="tokenBalance">0</div>
+            <p style="color:var(--text-secondary)">Token</p>
+        </div>
+        <h3 style="margin-bottom:20px">选择充值套餐</h3>
+        <div class="plans-grid">
+            <div class="plan-card" onclick="selectPackage('pkg_10')"><div class="plan-name">体验包</div><div class="plan-price">¥10</div><div class="plan-tokens">50,000 Token</div><button class="btn btn-outline" id="btn-pkg_10">立即充值</button></div>
+            <div class="plan-card recommended" onclick="selectPackage('pkg_30')"><div class="plan-name">超值包</div><div class="plan-price">¥30</div><div class="plan-tokens">160,000 Token<span style="color:var(--success);font-size:12px"> (送 1 万)</span></div><button class="btn btn-primary" id="btn-pkg_30">立即充值</button></div>
+            <div class="plan-card" onclick="selectPackage('pkg_50')"><div class="plan-name">进阶包</div><div class="plan-price">¥50</div><div class="plan-tokens">270,000 Token<span style="color:var(--success);font-size:12px"> (送 1 万)</span></div><button class="btn btn-outline" id="btn-pkg_50">立即充值</button></div>
+            <div class="plan-card" onclick="selectPackage('pkg_100')"><div class="plan-name">专业包</div><div class="plan-price">¥100</div><div class="plan-tokens">600,000 Token<span style="color:var(--success);font-size:12px"> (送 2 万)</span></div><button class="btn btn-outline" id="btn-pkg_100">立即充值</button></div>
+            <div class="plan-card" onclick="selectPackage('pkg_500')"><div class="plan-name">企业包</div><div class="plan-price">¥500</div><div class="plan-tokens">3,200,000 Token<span style="color:var(--success);font-size:12px"> (送 20 万)</span></div><button class="btn btn-outline" id="btn-pkg_500">立即充值</button></div>
+        </div>
+    </div>
+    <script>
+        async function loadBalance(){try{const r=await fetch('/api/v1/token/balance');const d=await r.json();document.getElementById('tokenBalance').textContent=d.balance.toLocaleString();}catch(e){console.error(e);}}
+        async function selectPackage(pkg){const names={'pkg_10':'体验包','pkg_30':'超值包','pkg_50':'进阶包','pkg_100':'专业包','pkg_500':'企业包'};if(!confirm('确认充值'+names[pkg]+'吗？'))return;try{const btn=document.getElementById('btn-'+pkg);btn.textContent='处理中...';btn.disabled=true;const r=await fetch('/api/v1/token/recharge',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({package_id:pkg,payment_method:'wechat'})});const d=await r.json();if(d.success){alert(d.message);loadBalance();}else{alert('失败：'+d.error);btn.textContent='重新尝试';btn.disabled=false;}}catch(e){alert('网络错误');}}
+        loadBalance();
+    </script>
+</body>
+</html>

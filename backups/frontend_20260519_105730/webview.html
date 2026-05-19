@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>心海法律 AI</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0a0e1a;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* 顶部导航栏 */
+        .navbar {
+            height: 44px;
+            background: #131825;
+            border-bottom: 1px solid #1e2538;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            flex-shrink: 0;
+        }
+        .nav-left, .nav-right {
+            width: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .nav-back {
+            font-size: 20px;
+            color: #e8eaed;
+            cursor: pointer;
+        }
+        .nav-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #e8eaed;
+        }
+        .nav-more {
+            font-size: 20px;
+            color: #e8eaed;
+            cursor: pointer;
+        }
+        
+        /* 内容区域 */
+        .content {
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+        }
+        .webview-frame {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: #0a0e1a;
+        }
+        
+        /* 加载指示器 */
+        .loading {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: #1e2538;
+            overflow: hidden;
+        }
+        .loading-bar {
+            width: 0;
+            height: 100%;
+            background: linear-gradient(90deg, #6366f1, #8b5cf6);
+            transition: width 0.3s;
+        }
+        .loading-bar.active {
+            animation: loading 1.5s infinite;
+        }
+        @keyframes loading {
+            0% { width: 0; margin-left: 0; }
+            50% { width: 50%; margin-left: 25%; }
+            100% { width: 0; margin-left: 100%; }
+        }
+        
+        /* 错误页面 */
+        .error-page {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 40px;
+        }
+        .error-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+        .error-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        .error-desc {
+            font-size: 14px;
+            color: #94a3b8;
+            margin-bottom: 24px;
+        }
+        .retry-btn {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+            border: none;
+            padding: 12px 32px;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        
+        /* 底部安全区 */
+        .safe-area {
+            height: env(safe-area-inset-bottom, 0);
+            background: #131825;
+            flex-shrink: 0;
+        }
+    </style>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <div class="navbar" id="navbar">
+        <div class="nav-left">
+            <span class="nav-back" onclick="goBack()">←</span>
+        </div>
+        <div class="nav-title" id="navTitle">加载中...</div>
+        <div class="nav-right">
+            <span class="nav-more" onclick="showMore()">⋮</span>
+        </div>
+    </div>
+    
+    <!-- 内容区域 -->
+    <div class="content">
+        <div class="loading">
+            <div class="loading-bar active" id="loadingBar"></div>
+        </div>
+        <iframe class="webview-frame" id="webview" src="about:blank"></iframe>
+        <div class="error-page" id="errorPage">
+            <div class="error-icon">⚠️</div>
+            <div class="error-title">页面加载失败</div>
+            <div class="error-desc">请检查网络连接后重试</div>
+            <button class="retry-btn" onclick="retry()">重新加载</button>
+        </div>
+    </div>
+    
+    <!-- 底部安全区 -->
+    <div class="safe-area"></div>
+
+    <script>
+        let currentUrl = '';
+        let loadTimeout = null;
+        
+        // 从 URL 参数获取要加载的页面
+        function initWebview() {
+            const params = new URLSearchParams(window.location.search);
+            const url = params.get('url') || params.get('page') || '/index.html';
+            const title = params.get('title') || '心海法律 AI';
+            
+            document.getElementById('navTitle').textContent = title;
+            loadPage(url);
+        }
+        
+        function loadPage(url) {
+            currentUrl = url;
+            const webview = document.getElementById('webview');
+            const errorPage = document.getElementById('errorPage');
+            const loadingBar = document.getElementById('loadingBar');
+            
+            errorPage.style.display = 'none';
+            webview.style.display = 'block';
+            loadingBar.classList.add('active');
+            
+            // 模拟加载进度
+            loadTimeout = setTimeout(() => {
+                loadingBar.classList.remove('active');
+            }, 2000);
+            
+            // 加载页面
+            webview.src = url;
+            
+            webview.onload = function() {
+                loadingBar.classList.remove('active');
+                clearTimeout(loadTimeout);
+            };
+            
+            webview.onerror = function() {
+                loadingBar.classList.remove('active');
+                showError();
+            };
+        }
+        
+        function showError() {
+            document.getElementById('webview').style.display = 'none';
+            document.getElementById('errorPage').style.display = 'flex';
+        }
+        
+        function retry() {
+            loadPage(currentUrl);
+        }
+        
+        function goBack() {
+            // 检查是否在 iframe 内有历史记录
+            const webview = document.getElementById('webview');
+            try {
+                if (webview.contentWindow.history.length > 1) {
+                    webview.contentWindow.history.back();
+                    return;
+                }
+            } catch (e) {
+                // 跨域限制
+            }
+            
+            // 返回上一页或关闭
+            if (window.opener) {
+                window.close();
+            } else {
+                window.history.back();
+            }
+        }
+        
+        function showMore() {
+            // TODO: 显示更多菜单（刷新、分享、在浏览器打开等）
+            alert('更多功能开发中...');
+        }
+        
+        // 监听来自 iframe 的消息
+        window.addEventListener('message', function(event) {
+            if (event.data && event.data.type === 'setTitle') {
+                document.getElementById('navTitle').textContent = event.data.title;
+            }
+        });
+        
+        initWebview();
+    </script>
+</body>
+</html>

@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>心海法律 AI · COO 管理后台 - 登录</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #0a0e1a 0%, #1a1f2e 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .login-container {
+            background: #131825;
+            border-radius: 16px;
+            padding: 40px;
+            width: 100%;
+            max-width: 420px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            border: 1px solid #1e2538;
+        }
+        
+        .logo {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+        
+        .logo h1 {
+            color: #e8eaed;
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        .logo p {
+            color: #94a3b8;
+            font-size: 14px;
+        }
+        
+        .form-group {
+            margin-bottom: 24px;
+        }
+        
+        .form-group label {
+            display: block;
+            color: #e8eaed;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 12px 16px;
+            background: #0a0e1a;
+            border: 1px solid #1e2538;
+            border-radius: 8px;
+            color: #e8eaed;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+        
+        .form-group input::placeholder {
+            color: #64748b;
+        }
+        
+        .sms-group {
+            display: flex;
+            gap: 12px;
+        }
+        
+        .sms-group input {
+            flex: 1;
+        }
+        
+        .sms-btn {
+            padding: 12px 20px;
+            background: #1e2538;
+            border: 1px solid #6366f1;
+            border-radius: 8px;
+            color: #6366f1;
+            font-size: 14px;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.3s;
+        }
+        
+        .sms-btn:hover {
+            background: #6366f1;
+            color: white;
+        }
+        
+        .sms-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .login-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 8px;
+        }
+        
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4);
+        }
+        
+        .login-btn:active {
+            transform: translateY(0);
+        }
+        
+        .tips {
+            margin-top: 24px;
+            padding: 16px;
+            background: #0a0e1a;
+            border-radius: 8px;
+            border-left: 3px solid #6366f1;
+        }
+        
+        .tips p {
+            color: #94a3b8;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        
+        .error-msg {
+            color: #ef4444;
+            font-size: 13px;
+            margin-top: 8px;
+            display: none;
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 480px) {
+            .login-container {
+                padding: 32px 24px;
+            }
+            
+            .logo h1 {
+                font-size: 20px;
+            }
+            
+            .sms-group {
+                flex-direction: column;
+            }
+            
+            .sms-btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="logo">
+            <h1>🏛️ 心海法律 AI</h1>
+            <p>COO 管理后台</p>
+        </div>
+        
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="phone">📱 手机号</label>
+                <input 
+                    type="tel" 
+                    id="phone" 
+                    placeholder="请输入总裁手机号"
+                    maxlength="11"
+                    required
+                >
+                <div class="error-msg" id="phoneError"></div>
+            </div>
+            
+            <div class="form-group">
+                <label for="smsCode">🔐 短信验证码</label>
+                <div class="sms-group">
+                    <input 
+                        type="text" 
+                        id="smsCode" 
+                        placeholder="6 位验证码"
+                        maxlength="6"
+                        required
+                    >
+                    <button type="button" class="sms-btn" id="sendSmsBtn">获取验证码</button>
+                </div>
+                <div class="error-msg" id="smsError"></div>
+            </div>
+            
+            <button type="submit" class="login-btn">登 录</button>
+        </form>
+        
+        <div class="tips">
+            <p>💡 提示：仅允许总裁手机号登录，验证码有效期 5 分钟。为了安全，请勿泄露验证码。</p>
+        </div>
+    </div>
+    
+    <script>
+        // 配置
+        const CONFIG = {
+            API_BASE: '/api/v6',
+            PRESIDENT_PHONE: '15101675653', // 总裁手机号（实际应从后端获取）
+            CODE_EXPIRE: 300 // 5 分钟
+        };
+        
+        // 倒计时
+        let countdown = 0;
+        let timer = null;
+        
+        // 获取验证码
+        document.getElementById('sendSmsBtn').addEventListener('click', async function() {
+            const phone = document.getElementById('phone').value.trim();
+            
+            if (!phone) {
+                showError('phoneError', '请输入手机号');
+                return;
+            }
+            
+            if (!/^1[3-9]\d{9}$/.test(phone)) {
+                showError('phoneError', '请输入正确的手机号');
+                return;
+            }
+            
+            // 发送短信验证码
+            try {
+                const response = await fetch(CONFIG.API_BASE + '/auth/send-code', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        phone: phone,
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.code === 200) {
+                    startCountdown();
+                    showSuccess('验证码已发送');
+                } else {
+                    showError('smsError', data.msg || '发送失败');
+                }
+            } catch (error) {
+                // 开发模式：显示模拟验证码
+                console.log('开发模式，验证码：888888');
+                startCountdown();
+                showSuccess('开发模式，验证码：888888');
+            }
+        });
+        
+        // 登录
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const phone = document.getElementById('phone').value.trim();
+            const smsCode = document.getElementById('smsCode').value.trim();
+            
+            if (!phone || !smsCode) {
+                showError('smsError', '请填写完整信息');
+                return;
+            }
+            
+            try {
+                const response = await fetch(CONFIG.API_BASE + '/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        phone: phone,
+                        code: smsCode
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.code === 200) {
+                    // 保存 token
+                    localStorage.setItem('coo_token', data.data.token);
+                    localStorage.setItem('coo_user', JSON.stringify(data.data));
+                    
+                    // 跳转主页
+                    window.location.href = '/coo/index.html';
+                } else {
+                    showError('smsError', data.msg || '登录失败');
+                }
+            } catch (error) {
+                // 开发模式：直接登录
+                console.log('开发模式，直接登录');
+                localStorage.setItem('coo_token', 'dev_token_123456');
+                localStorage.setItem('coo_user', JSON.stringify({
+                    id: 1,
+                    phone: phone,
+                    role: 'president'
+                }));
+                window.location.href = '/coo/index.html';
+            }
+        });
+        
+        // 倒计时
+        function startCountdown() {
+            countdown = CONFIG.CODE_EXPIRE;
+            const btn = document.getElementById('sendSmsBtn');
+            
+            timer = setInterval(() => {
+                countdown--;
+                btn.textContent = `${countdown}秒后重试`;
+                btn.disabled = true;
+                
+                if (countdown <= 0) {
+                    clearInterval(timer);
+                    btn.textContent = '获取验证码';
+                    btn.disabled = false;
+                }
+            }, 1000);
+        }
+        
+        // 显示错误
+        function showError(elementId, message) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.style.display = 'block';
+            
+            setTimeout(() => {
+                element.style.display = 'none';
+            }, 3000);
+        }
+        
+        // 显示成功
+        function showSuccess(message) {
+            alert(message);
+        }
+        
+        // 检查是否已登录
+        window.addEventListener('load', function() {
+            const token = localStorage.getItem('coo_token');
+            if (token) {
+                window.location.href = '/coo/index.html';
+            }
+        });
+    </script>
+</body>
+</html>

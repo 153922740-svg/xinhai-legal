@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>合伙人后台 - 心海法律 AI</title>
+    <style>
+        :root{--bg-primary:#0a0e1a;--bg-secondary:#131825;--bg-card:#1a1f2e;--border:#1e2538;--text-primary:#e8eaed;--text-secondary:#94a3b8;--accent-primary:#6366f1;--accent-secondary:#8b5cf6;--success:#22c55e;--warning:#f59e0b}
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg-primary);color:var(--text-primary);min-height:100vh;padding:20px}
+        .container{max-width:1200px;margin:0 auto}
+        .header{margin-bottom:30px}
+        .header h1{font-size:24px;margin-bottom:10px}
+        .header p{color:var(--text-secondary)}
+        .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:20px;margin-bottom:30px}
+        .stat-card{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:20px}
+        .stat-card .label{font-size:14px;color:var(--text-secondary);margin-bottom:8px}
+        .stat-card .value{font-size:28px;font-weight:600;color:var(--accent-primary)}
+        .stat-card .sub{font-size:12px;color:var(--text-secondary);margin-top:8px}
+        .card{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:20px}
+        .card h2{font-size:18px;margin-bottom:20px}
+        .referral-section{display:flex;gap:20px;flex-wrap:wrap;margin-bottom:20px}
+        .referral-box{flex:1;min-width:300px;background:var(--bg-secondary);border-radius:8px;padding:15px}
+        .referral-box label{font-size:12px;color:var(--text-secondary);display:block;margin-bottom:8px}
+        .referral-box .code{font-size:24px;font-weight:600;color:var(--accent-primary);letter-spacing:2px}
+        .referral-box input{width:100%;padding:10px;background:var(--bg-primary);border:1px solid var(--border);border-radius:6px;color:var(--text-primary);margin-top:8px}
+        .btn{padding:12px 24px;background:linear-gradient(135deg,var(--accent-primary),var(--accent-secondary));color:white;border:none;border-radius:8px;font-size:14px;cursor:pointer}
+        .btn:hover{opacity:0.9}
+        .btn-outline{background:transparent;border:1px solid var(--accent-primary);color:var(--accent-primary)}
+        .table{width:100%;border-collapse:collapse}
+        .table th,.table td{padding:12px;text-align:left;border-bottom:1px solid var(--border)}
+        .table th{font-size:12px;color:var(--text-secondary);font-weight:500}
+        .table td{font-size:14px}
+        .badge{padding:4px 8px;border-radius:4px;font-size:12px}
+        .badge-pending{background:var(--warning);color:#000}
+        .badge-paid{background:var(--success);color:#fff}
+        .level-badge{display:inline-block;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:500}
+        .level-1{background:#6b7280;color:#fff}
+        .level-2{background:#9ca3af;color:#000}
+        .level-3{background:#fbbf24;color:#000}
+        .level-4{background:#8b5cf6;color:#fff}
+        .tabs{display:flex;gap:10px;margin-bottom:20px;border-bottom:1px solid var(--border);padding-bottom:10px}
+        .tab{padding:8px 16px;border-radius:6px;cursor:pointer;font-size:14px}
+        .tab.active{background:var(--accent-primary);color:white}
+        .tab:hover{background:var(--bg-secondary)}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤝 合伙人后台</h1>
+            <p>管理您的推荐团队和收益</p>
+        </div>
+        
+        <!-- 等级信息 -->
+        <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+                <h2>我的等级</h2>
+                <span id="levelBadge" class="level-badge level-1">普通合伙人</span>
+            </div>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="label">佣金比例</div>
+                    <div class="value" id="commissionRate">10%</div>
+                    <div class="sub">直推奖励</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">直推人数</div>
+                    <div class="value" id="directCount">0</div>
+                    <div class="sub">您的直接推荐</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">团队总人数</div>
+                    <div class="value" id="teamSize">0</div>
+                    <div class="sub">含间接推荐</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">可提现余额</div>
+                    <div class="value" id="availableBalance">¥0</div>
+                    <div class="sub" onclick="showWithdrawModal()" style="color:var(--accent-primary);cursor:pointer">💰 申请提现</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 推荐码 -->
+        <div class="card">
+            <h2>我的推荐</h2>
+            <div class="referral-section">
+                <div class="referral-box">
+                    <label>推荐码</label>
+                    <div class="code" id="referralCode">---</div>
+                </div>
+                <div class="referral-box">
+                    <label>推荐链接</label>
+                    <input type="text" id="referralLink" readonly value="---">
+                </div>
+            </div>
+            <button class="btn" onclick="copyLink()">📋 复制链接</button>
+        </div>
+        
+        <!-- 佣金记录 -->
+        <div class="card">
+            <h2>佣金记录</h2>
+            <div class="tabs">
+                <div class="tab active" onclick="switchTab('all')">全部</div>
+                <div class="tab" onclick="switchTab('pending')">待结算</div>
+                <div class="tab" onclick="switchTab('paid')">已结算</div>
+            </div>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>订单号</th>
+                        <th>类型</th>
+                        <th>金额</th>
+                        <th>佣金比例</th>
+                        <th>佣金</th>
+                        <th>状态</th>
+                        <th>时间</th>
+                    </tr>
+                </thead>
+                <tbody id="commissionTable">
+                    <tr><td colspan="7" style="text-align:center;color:var(--text-secondary)">加载中...</td></tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- 提现记录 -->
+        <div class="card">
+            <h2>提现记录</h2>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>申请时间</th>
+                        <th>金额</th>
+                        <th>手续费</th>
+                        <th>实收</th>
+                        <th>支付宝</th>
+                        <th>状态</th>
+                        <th>完成时间</th>
+                    </tr>
+                </thead>
+                <tbody id="withdrawalTable">
+                    <tr><td colspan="7" style="text-align:center;color:var(--text-secondary)">暂无记录</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <script>
+        const userId = 1; // TODO: 从登录状态获取
+        let currentTab = 'all';
+        
+        window.onload = function() {
+            loadDashboard();
+            loadCommissions();
+            loadWithdrawals();
+        };
+        
+        async function loadDashboard() {
+            try {
+                const r = await fetch(`/api/v1/partner/dashboard?user_id=${userId}`);
+                const d = await r.json();
+                
+                if (d.code === 200) {
+                    const data = d.data;
+                    document.getElementById('levelBadge').textContent = data.level_name;
+                    document.getElementById('levelBadge').className = `level-badge level-${data.level}`;
+                    document.getElementById('commissionRate').textContent = (data.commission_rate * 100) + '%';
+                    document.getElementById('directCount').textContent = data.direct_referrals;
+                    document.getElementById('teamSize').textContent = data.team_size;
+                    document.getElementById('availableBalance').textContent = '¥' + data.available_balance.toFixed(2);
+                    document.getElementById('referralCode').textContent = data.referral_code;
+                    document.getElementById('referralLink').value = data.referral_link;
+                }
+            } catch(e) {
+                console.error(e);
+            }
+        }
+        
+        async function loadCommissions(status = 'all') {
+            try {
+                const r = await fetch(`/api/v1/commission/list?user_id=${userId}&status=${status}`);
+                const d = await r.json();
+                
+                const tbody = document.getElementById('commissionTable');
+                
+                if (d.code === 200 && d.data.items.length > 0) {
+                    tbody.innerHTML = d.data.items.map(item => `
+                        <tr>
+                            <td>${item.order_no || item.order_id}</td>
+                            <td>${item.order_type === 'membership' ? '会员' : 'Token'}</td>
+                            <td>¥${item.amount}</td>
+                            <td>${(item.rate * 100).toFixed(0)}%</td>
+                            <td style="color:var(--accent-primary)">¥${(item.amount * item.rate).toFixed(2)}</td>
+                            <td><span class="badge badge-${item.status}">${item.status === 'pending' ? '待结算' : '已结算'}</span></td>
+                            <td>${new Date(item.created_at).toLocaleDateString()}</td>
+                        </tr>
+                    `).join('');
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-secondary)">暂无记录</td></tr>';
+                }
+            } catch(e) {
+                console.error(e);
+            }
+        }
+        
+        async function loadWithdrawals() {
+            try {
+                const r = await fetch(`/api/v1/withdrawal/list?user_id=${userId}`);
+                const d = await r.json();
+                
+                const tbody = document.getElementById('withdrawalTable');
+                
+                if (d.code === 200 && d.data.items.length > 0) {
+                    tbody.innerHTML = d.data.items.map(item => `
+                        <tr>
+                            <td>${new Date(item.created_at).toLocaleDateString()}</td>
+                            <td>¥${item.amount.toFixed(2)}</td>
+                            <td>¥${item.fee.toFixed(2)}</td>
+                            <td>¥${item.actual_amount.toFixed(2)}</td>
+                            <td>${item.alipay_account || '-'}</td>
+                            <td><span class="badge badge-${item.status === 'completed' ? 'paid' : 'pending'}">${getStatusText(item.status)}</span></td>
+                            <td>${item.completed_at ? new Date(item.completed_at).toLocaleDateString() : '-'}</td>
+                        </tr>
+                    `).join('');
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-secondary)">暂无记录</td></tr>';
+                }
+            } catch(e) {
+                console.error(e);
+            }
+        }
+        
+        function getStatusText(status) {
+            const map = {pending:'审核中',processing:'打款中',completed:'已完成',rejected:'已拒绝'};
+            return map[status] || status;
+        }
+        
+        function switchTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            loadCommissions(tab);
+        }
+        
+        function copyLink() {
+            const link = document.getElementById('referralLink').value;
+            navigator.clipboard.writeText(link).then(() => {
+                alert('链接已复制！');
+            });
+        }
+        
+        function showWithdrawModal() {
+            const amount = prompt('请输入提现金额（最低 100 元）:');
+            if (amount && parseFloat(amount) >= 100) {
+                const alipay = prompt('请输入支付宝账号:');
+                const name = prompt('请输入支付宝实名:');
+                if (alipay && name) {
+                    applyWithdrawal(amount, alipay, name);
+                }
+            } else if (amount) {
+                alert('最低提现金额为 100 元');
+            }
+        }
+        
+        async function applyWithdrawal(amount, alipay, name) {
+            try {
+                const r = await fetch('/api/v1/withdrawal/apply', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        user_id: userId,
+                        amount: parseFloat(amount),
+                        alipay_account: alipay,
+                        alipay_name: name
+                    })
+                });
+                const d = await r.json();
+                
+                if (d.code === 200) {
+                    alert('提现申请已提交，请等待审核');
+                    loadWithdrawals();
+                    loadDashboard();
+                } else {
+                    alert('申请失败：' + d.message);
+                }
+            } catch(e) {
+                alert('申请失败，请稍后重试');
+            }
+        }
+    </script>
+</body>
+</html>

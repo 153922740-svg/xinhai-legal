@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>专属 AI 助手 - 心海法律 AI</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0a0e1a;
+            color: #e8eaed;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .header { margin-bottom: 20px; }
+        .header h1 { font-size: 24px; font-weight: 600; }
+        
+        .assistant-card {
+            background: linear-gradient(135deg, #1a1f2e, #131825);
+            border: 1px solid #1e2538;
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+        .assistant-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        .assistant-avatar {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+        }
+        .assistant-info h2 {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        .assistant-info p {
+            font-size: 13px;
+            color: #94a3b8;
+        }
+        .assistant-badge {
+            display: inline-block;
+            background: rgba(99, 102, 241, 0.2);
+            color: #6366f1;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 11px;
+            margin-top: 8px;
+        }
+        
+        .stats-row {
+            display: flex;
+            gap: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #1e2538;
+        }
+        .stat-item {
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 24px;
+            font-weight: 600;
+            color: #6366f1;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #94a3b8;
+            margin-top: 4px;
+        }
+        
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+        
+        .capabilities-list {
+            background: #1a1f2e;
+            border: 1px solid #1e2538;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 24px;
+        }
+        .capability-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid #1e2538;
+        }
+        .capability-item:last-child { border-bottom: none; }
+        .capability-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            background: #131825;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+        .capability-text {
+            flex: 1;
+        }
+        .capability-title {
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .capability-desc {
+            font-size: 12px;
+            color: #94a3b8;
+        }
+        
+        .chat-preview {
+            background: #1a1f2e;
+            border: 1px solid #1e2538;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 24px;
+        }
+        .chat-message {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .chat-message:last-child { margin-bottom: 0; }
+        .chat-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+        .chat-bubble {
+            background: #131825;
+            border-radius: 12px;
+            padding: 12px;
+            flex: 1;
+        }
+        .chat-text {
+            font-size: 13px;
+            line-height: 1.5;
+        }
+        
+        .start-chat-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+            border: none;
+            padding: 16px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        
+        .upgrade-notice {
+            background: rgba(99, 102, 241, 0.1);
+            border: 1px solid #6366f1;
+            border-radius: 12px;
+            padding: 16px;
+            margin-top: 20px;
+            text-align: center;
+        }
+        .upgrade-notice p {
+            font-size: 13px;
+            color: #94a3b8;
+            margin-bottom: 12px;
+        }
+        .upgrade-btn {
+            background: #6366f1;
+            color: white;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🤖 专属 AI 助手</h1>
+    </div>
+    
+    <!-- 助手卡片 -->
+    <div class="assistant-card">
+        <div class="assistant-header">
+            <div class="assistant-avatar">⚖️</div>
+            <div class="assistant-info">
+                <h2>心海法律助手</h2>
+                <p>您的 7×24 小时私人法律顾问</p>
+                <span class="assistant-badge">VIP 专属</span>
+            </div>
+        </div>
+        <div class="stats-row">
+            <div class="stat-item">
+                <div class="stat-value" id="chatCount">0</div>
+                <div class="stat-label">对话次数</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="solveRate">0%</div>
+                <div class="stat-label">解决率</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="responseTime">0s</div>
+                <div class="stat-label">平均响应</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 专属能力 -->
+    <div class="section-title">✨ 专属能力</div>
+    <div class="capabilities-list">
+        <div class="capability-item">
+            <div class="capability-icon">📝</div>
+            <div class="capability-text">
+                <div class="capability-title">文书代写</div>
+                <div class="capability-desc">起诉状、答辩状、律师函等 9 种文书</div>
+            </div>
+        </div>
+        <div class="capability-item">
+            <div class="capability-icon">🔍</div>
+            <div class="capability-text">
+                <div class="capability-title">案件评估</div>
+                <div class="capability-desc">AI 分析胜诉率和赔偿金额</div>
+            </div>
+        </div>
+        <div class="capability-item">
+            <div class="capability-icon">📋</div>
+            <div class="capability-text">
+                <div class="capability-title">合同审阅</div>
+                <div class="capability-desc">识别风险条款，提供修改建议</div>
+            </div>
+        </div>
+        <div class="capability-item">
+            <div class="capability-icon">💼</div>
+            <div class="capability-text">
+                <div class="capability-title">档案管理</div>
+                <div class="capability-desc">专属案件档案，随时查阅</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 对话预览 -->
+    <div class="section-title">💬 最近对话</div>
+    <div class="chat-preview">
+        <div class="chat-message">
+            <div class="chat-avatar">👤</div>
+            <div class="chat-bubble">
+                <div class="chat-text">我想咨询一下离婚财产分割的问题...</div>
+            </div>
+        </div>
+        <div class="chat-message">
+            <div class="chat-avatar">⚖️</div>
+            <div class="chat-bubble">
+                <div class="chat-text">您好！离婚财产分割主要涉及以下几个方面：1. 夫妻共同财产的认定；2. 个人财产的界定；3. 分割比例...</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 开始对话 -->
+    <button class="start-chat-btn" onclick="startChat()">💬 开始对话</button>
+    
+    <!-- 升级提示 -->
+    <div class="upgrade-notice" id="upgradeNotice" style="display:none;">
+        <p>升级 VIP 会员，解锁专属 AI 助手全部功能</p>
+        <button class="upgrade-btn" onclick="goUpgrade()">立即升级</button>
+    </div>
+
+    <script>
+        // 加载助手数据
+        async function loadAssistantData() {
+            try {
+                const response = await fetch('/api/assistant/stats');
+                const data = await response.json();
+                const stats = data.stats || { chatCount: 127, solveRate: 96.8, responseTime: 1.2 };
+                document.getElementById('chatCount').textContent = stats.chatCount;
+                document.getElementById('solveRate').textContent = stats.solveRate + '%';
+                document.getElementById('responseTime').textContent = stats.responseTime + 's';
+            } catch (e) {
+                document.getElementById('chatCount').textContent = '127';
+                document.getElementById('solveRate').textContent = '96.8%';
+                document.getElementById('responseTime').textContent = '1.2s';
+            }
+        }
+        
+        function startChat() {
+            // TODO: 检查会员状态
+            const isVip = true; // 从服务器获取
+            if (isVip) {
+                window.location.href = '/chat.html?assistant=dedicated';
+            } else {
+                document.getElementById('upgradeNotice').style.display = 'block';
+            }
+        }
+        
+        function goUpgrade() {
+            window.location.href = '/member.html';
+        }
+        
+        loadAssistantData();
+    </script>
+</body>
+</html>

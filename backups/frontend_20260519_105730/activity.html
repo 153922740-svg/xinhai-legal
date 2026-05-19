@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>活动中心 - 心海法律 AI</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0a0e1a;
+            color: #e8eaed;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .header {
+            margin-bottom: 20px;
+        }
+        .header h1 { font-size: 24px; font-weight: 600; }
+        
+        /* 轮播图 */
+        .banner-swiper {
+            position: relative;
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 24px;
+            height: 180px;
+        }
+        .banner-slide {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+        .banner-slide.active { opacity: 1; }
+        .banner-slide img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .banner-dots {
+            position: absolute;
+            bottom: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 8px;
+        }
+        .banner-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.5);
+            cursor: pointer;
+        }
+        .banner-dot.active { background: #6366f1; }
+        
+        /* 活动列表 */
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+        .activity-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+        .activity-card {
+            background: #1a1f2e;
+            border: 1px solid #1e2538;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        .activity-img {
+            width: 100%;
+            height: 140px;
+            object-fit: cover;
+            background: #131825;
+        }
+        .activity-content {
+            padding: 14px;
+        }
+        .activity-title {
+            font-size: 16px;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+        .activity-desc {
+            font-size: 13px;
+            color: #94a3b8;
+            margin-bottom: 12px;
+            line-height: 1.5;
+        }
+        .activity-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .countdown {
+            font-size: 12px;
+            color: #6366f1;
+        }
+        .join-btn {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 13px;
+            cursor: pointer;
+        }
+        
+        /* 我的参与 */
+        .my-activities {
+            margin-top: 24px;
+        }
+        .activity-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #1e2538;
+        }
+        .activity-item:last-child { border-bottom: none; }
+        .activity-item-info h4 {
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+        .activity-item-info p {
+            font-size: 12px;
+            color: #94a3b8;
+        }
+        .activity-status {
+            font-size: 12px;
+            padding: 4px 10px;
+            border-radius: 12px;
+        }
+        .status-joined { background: rgba(99, 102, 241, 0.2); color: #6366f1; }
+        .status-ended { background: rgba(148, 163, 184, 0.2); color: #94a3b8; }
+        
+        /* 弹窗 */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal {
+            background: #1a1f2e;
+            border-radius: 16px;
+            padding: 24px;
+            max-width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+        .modal-desc {
+            font-size: 14px;
+            color: #94a3b8;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+        .modal-btn {
+            padding: 10px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            border: none;
+        }
+        .modal-btn-cancel {
+            background: #131825;
+            color: #94a3b8;
+        }
+        .modal-btn-confirm {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🎁 活动中心</h1>
+    </div>
+    
+    <!-- 轮播图 -->
+    <div class="banner-swiper" id="bannerSwiper">
+        <div class="banner-slide active">
+            <div style="width:100%;height:100%;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;">
+                <span style="font-size:24px;font-weight:600;">新人专享福利</span>
+            </div>
+        </div>
+        <div class="banner-slide">
+            <div style="width:100%;height:100%;background:linear-gradient(135deg,#8b5cf6,#6366f1);display:flex;align-items:center;justify-content:center;">
+                <span style="font-size:24px;font-weight:600;">邀请好友得积分</span>
+            </div>
+        </div>
+        <div class="banner-dots">
+            <div class="banner-dot active" onclick="setBanner(0)"></div>
+            <div class="banner-dot" onclick="setBanner(1)"></div>
+        </div>
+    </div>
+    
+    <!-- 正在进行 -->
+    <div class="section-title">🔥 正在进行</div>
+    <div class="activity-list" id="ongoingList">
+        <!-- 由 JS 动态加载 -->
+    </div>
+    
+    <!-- 我的参与 -->
+    <div class="my-activities">
+        <div class="section-title">📋 我的参与</div>
+        <div id="myActivitiesList">
+            <!-- 由 JS 动态加载 -->
+        </div>
+    </div>
+    
+    <!-- 活动详情弹窗 -->
+    <div class="modal-overlay" id="activityModal">
+        <div class="modal">
+            <div class="modal-title" id="modalTitle">活动标题</div>
+            <div class="modal-desc" id="modalDesc">活动详情描述...</div>
+            <div class="modal-actions">
+                <button class="modal-btn modal-btn-cancel" onclick="closeModal()">取消</button>
+                <button class="modal-btn modal-btn-confirm" onclick="joinActivity()">立即参与</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentActivityId = null;
+        let bannerIndex = 0;
+        
+        // 轮播图自动切换
+        setInterval(() => {
+            bannerIndex = (bannerIndex + 1) % 2;
+            setBanner(bannerIndex);
+        }, 5000);
+        
+        function setBanner(index) {
+            bannerIndex = index;
+            document.querySelectorAll('.banner-slide').forEach((slide, i) => {
+                slide.classList.toggle('active', i === index);
+            });
+            document.querySelectorAll('.banner-dot').forEach((dot, i) => {
+                dot.classList.toggle('active', i === index);
+            });
+        }
+        
+        // 加载活动列表
+        async function loadActivities() {
+            try {
+                const response = await fetch('/api/activities?status=ongoing');
+                const data = await response.json();
+                renderOngoingActivities(data.activities || [
+                    {id:1, title:'新人注册送 3 天会员', desc:'新用户注册即可免费获得 3 天 VIP 会员体验', endTime:'2026-05-30'},
+                    {id:2, title:'邀请好友得 100 积分', desc:'每邀请一位好友注册，双方各得 100 积分', endTime:'2026-06-15'},
+                    {id:3, title:'每日签到领 Token', desc:'连续签到 7 天，额外奖励 50 Token', endTime:'2026-12-31'}
+                ]);
+            } catch (e) {
+                renderOngoingActivities([
+                    {id:1, title:'新人注册送 3 天会员', desc:'新用户注册即可免费获得 3 天 VIP 会员体验', endTime:'2026-05-30'},
+                    {id:2, title:'邀请好友得 100 积分', desc:'每邀请一位好友注册，双方各得 100 积分', endTime:'2026-06-15'},
+                    {id:3, title:'每日签到领 Token', desc:'连续签到 7 天，额外奖励 50 Token', endTime:'2026-12-31'}
+                ]);
+            }
+        }
+        
+        function renderOngoingActivities(activities) {
+            const list = document.getElementById('ongoingList');
+            list.innerHTML = activities.map(activity => `
+                <div class="activity-card" onclick="showActivityDetail('${activity.id}', '${activity.title}', '${activity.desc}')">
+                    <div class="activity-img" style="display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#131825,#1a1f2e);">
+                        <span style="font-size:40px;">🎉</span>
+                    </div>
+                    <div class="activity-content">
+                        <div class="activity-title">${activity.title}</div>
+                        <div class="activity-desc">${activity.desc}</div>
+                        <div class="activity-footer">
+                            <span class="countdown">⏰ 截止：${activity.endTime}</span>
+                            <button class="join-btn" onclick="event.stopPropagation();showActivityDetail('${activity.id}', '${activity.title}', '${activity.desc}')">立即参与</button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        // 加载我的参与
+        async function loadMyActivities() {
+            try {
+                const response = await fetch('/api/my-activities');
+                const data = await response.json();
+                renderMyActivities(data.activities || []);
+            } catch (e) {
+                renderMyActivities([]);
+            }
+        }
+        
+        function renderMyActivities(activities) {
+            const list = document.getElementById('myActivitiesList');
+            if (activities.length === 0) {
+                list.innerHTML = '<p style="color:#94a3b8;font-size:13px;text-align:center;padding:20px;">暂无参与记录</p>';
+                return;
+            }
+            list.innerHTML = activities.map(activity => `
+                <div class="activity-item">
+                    <div class="activity-item-info">
+                        <h4>${activity.title}</h4>
+                        <p>参与时间：${activity.joinedAt}</p>
+                    </div>
+                    <span class="activity-status ${activity.status === 'ended' ? 'status-ended' : 'status-joined'}">
+                        ${activity.status === 'ended' ? '已结束' : '进行中'}
+                    </span>
+                </div>
+            `).join('');
+        }
+        
+        // 显示活动详情
+        function showActivityDetail(id, title, desc) {
+            currentActivityId = id;
+            document.getElementById('modalTitle').textContent = title;
+            document.getElementById('modalDesc').textContent = desc;
+            document.getElementById('activityModal').classList.add('active');
+        }
+        
+        // 关闭弹窗
+        function closeModal() {
+            document.getElementById('activityModal').classList.remove('active');
+            currentActivityId = null;
+        }
+        
+        // 参与活动
+        function joinActivity() {
+            console.log('参与活动:', currentActivityId);
+            // TODO: 调用参与 API
+            alert('参与成功！');
+            closeModal();
+            loadMyActivities();
+        }
+        
+        // 初始化
+        loadActivities();
+        loadMyActivities();
+    </script>
+</body>
+</html>

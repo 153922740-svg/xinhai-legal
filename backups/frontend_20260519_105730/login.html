@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录 - 心海法律 AI</title>
+    <style>
+        :root{--bg-primary:#0a0e1a;--bg-secondary:#131825;--bg-card:#1a1f2e;--border:#1e2538;--text-primary:#e8eaed;--text-secondary:#94a3b8;--accent-primary:#6366f1;--accent-secondary:#8b5cf6}
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg-primary);color:var(--text-primary);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+        .container{width:100%;max-width:400px}
+        .logo{text-align:center;margin-bottom:40px}
+        .logo h1{font-size:28px;margin-bottom:8px;background:linear-gradient(135deg,var(--accent-primary),var(--accent-secondary));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+        .logo p{color:var(--text-secondary);font-size:14px}
+        .card{background:var(--bg-card);border:1px solid var(--border);border-radius:16px;padding:30px}
+        .tabs{display:flex;margin-bottom:20px}
+        .tab{flex:1;text-align:center;padding:12px;border-radius:8px;font-size:14px;cursor:pointer}
+        .tab.active{background:var(--accent-primary);color:white}
+        .tab:not(.active){background:var(--bg-secondary);color:var(--text-secondary)}
+        .form-group{margin-bottom:20px}
+        .form-group label{display:block;font-size:14px;color:var(--text-secondary);margin-bottom:8px}
+        .input-wrapper{display:flex;gap:10px}
+        input{width:100%;padding:14px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:12px;color:var(--text-primary);font-size:16px}
+        input:focus{outline:none;border-color:var(--accent-primary)}
+        .btn{width:100%;padding:14px;background:linear-gradient(135deg,var(--accent-primary),var(--accent-secondary));color:white;border:none;border-radius:12px;font-size:16px;font-weight:500;cursor:pointer}
+        .btn:disabled{opacity:0.5;cursor:not-allowed}
+        .btn-outline{background:transparent;border:1px solid var(--accent-primary);color:var(--accent-primary)}
+        .divider{display:flex;align-items:center;margin:20px 0;color:var(--text-secondary);font-size:14px}
+        .divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border)}
+        .divider span{padding:0 15px}
+        .wx-btn{width:100%;padding:14px;background:#07c160;color:white;border:none;border-radius:12px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
+        .agreement{margin-top:20px;font-size:12px;color:var(--text-secondary);text-align:center;line-height:1.6}
+        .agreement a{color:var(--accent-primary)}
+        .toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.8);color:white;padding:12px 24px;border-radius:8px;font-size:14px;z-index:1000;display:none}
+        .countdown{color:var(--accent-primary)}
+    </style>
+</head>
+<body>
+    <div class="toast" id="toast"></div>
+    <div class="container">
+        <div class="logo">
+            <h1>⚖️ 心海法律 AI</h1>
+            <p>7×24 小时 AI 法律顾问</p>
+        </div>
+        <div class="card">
+            <div class="tabs">
+                <div class="tab active" onclick="switchTab('phone')">手机号登录</div>
+                <div class="tab" onclick="switchTab('wx')">微信登录</div>
+            </div>
+            
+            <!-- 手机号登录 -->
+            <div id="phoneForm">
+                <div class="form-group">
+                    <label>手机号</label>
+                    <input type="tel" id="phone" placeholder="请输入手机号" maxlength="11">
+                </div>
+                <div class="form-group">
+                    <label>验证码</label>
+                    <div class="input-wrapper">
+                        <input type="text" id="code" placeholder="6 位验证码" maxlength="6">
+                        <button class="btn btn-outline" id="sendCodeBtn" onclick="sendCode()" style="width:auto;white-space:nowrap">获取验证码</button>
+                    </div>
+                </div>
+                <button class="btn" onclick="login()" id="loginBtn">登录/注册</button>
+            </div>
+            
+            <!-- 微信登录 -->
+            <div id="wxForm" style="display:none">
+                <button class="wx-btn" onclick="wxLogin()">
+                    <span>微信</span>
+                    <span>一键登录</span>
+                </button>
+                <div class="divider"><span>或</span></div>
+                <button class="btn btn-outline" onclick="switchTab('phone')">返回手机号登录</button>
+            </div>
+            
+            <div class="agreement">
+                登录即代表您同意
+                <a href="#" onclick="showAgreement('user')">《用户协议》</a>
+                和
+                <a href="#" onclick="showAgreement('privacy')">《隐私政策》</a>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let countdown = 0;
+        let phone = '';
+        
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            if (tab === 'phone') {
+                document.getElementById('phoneForm').style.display = 'block';
+                document.getElementById('wxForm').style.display = 'none';
+            } else {
+                document.getElementById('phoneForm').style.display = 'none';
+                document.getElementById('wxForm').style.display = 'block';
+            }
+        }
+        
+        async function sendCode() {
+            phone = document.getElementById('phone').value.trim();
+            
+            if (!phone || phone.length !== 11) {
+                showToast('请输入正确的手机号');
+                return;
+            }
+            
+            const btn = document.getElementById('sendCodeBtn');
+            btn.disabled = true;
+            
+            try {
+                const r = await fetch('/api/v1/auth/send_sms', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({phone: '+86' + phone})
+                });
+                const d = await r.json();
+                
+                if (d.code === 200) {
+                    showToast('验证码已发送');
+                    startCountdown(d.data.expires_in);
+                } else {
+                    showToast(d.message);
+                    btn.disabled = false;
+                }
+            } catch(e) {
+                showToast('发送失败，请稍后重试');
+                btn.disabled = false;
+            }
+        }
+        
+        function startCountdown(seconds) {
+            countdown = seconds;
+            const btn = document.getElementById('sendCodeBtn');
+            
+            const timer = setInterval(() => {
+                if (countdown <= 0) {
+                    clearInterval(timer);
+                    btn.disabled = false;
+                    btn.textContent = '获取验证码';
+                    return;
+                }
+                btn.textContent = `${countdown}s 后重发`;
+                countdown--;
+            }, 1000);
+        }
+        
+        async function login() {
+            phone = document.getElementById('phone').value.trim();
+            const code = document.getElementById('code').value.trim();
+            
+            if (!phone || phone.length !== 11) {
+                showToast('请输入正确的手机号');
+                return;
+            }
+            
+            if (!code || code.length !== 6) {
+                showToast('请输入 6 位验证码');
+                return;
+            }
+            
+            const btn = document.getElementById('loginBtn');
+            btn.disabled = true;
+            btn.textContent = '登录中...';
+            
+            try {
+                const r = await fetch('/api/v1/auth/login', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({phone: '+86' + phone, code: code})
+                });
+                const d = await r.json();
+                
+                if (d.code === 200) {
+                    // 保存登录状态
+                    localStorage.setItem('user_id', d.data.user.id);
+                    localStorage.setItem('user_token', d.data.token);
+                    localStorage.setItem('username', d.data.user.username);
+                    
+                    if (d.data.is_new) {
+                        showToast(`欢迎！已赠送${d.data.bonus.token}Token 和${d.data.bonus.trial_days}天会员`);
+                    } else {
+                        showToast('登录成功');
+                    }
+                    
+                    // 延迟跳转到首页
+                    setTimeout(() => {
+                        window.location.href = '/chat.html';
+                    }, 1000);
+                } else {
+                    showToast(d.message);
+                    btn.disabled = false;
+                    btn.textContent = '登录/注册';
+                }
+            } catch(e) {
+                showToast('登录失败，请稍后重试');
+                btn.disabled = false;
+                btn.textContent = '登录/注册';
+            }
+        }
+        
+        async function wxLogin() {
+            showToast('微信登录功能开发中...');
+            // TODO: 实现微信登录
+            // 小程序环境：wx.login() 获取 code
+            // H5 环境：微信 OAuth2 授权
+        }
+        
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.style.display = 'block';
+            setTimeout(() => {
+                toast.style.display = 'none';
+            }, 2000);
+        }
+        
+        function showAgreement(type) {
+            alert(type === 'user' ? '《用户协议》内容开发中...' : '《隐私政策》内容开发中...');
+        }
+    </script>
+</body>
+</html>

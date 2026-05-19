@@ -1,0 +1,1029 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>心海法律 AI · COO 管理后台</title>
+    <meta name="theme-color" content="#0a0e1a">
+    <style>
+        :root {
+            --bg-primary: #0a0e1a;
+            --bg-secondary: #131825;
+            --bg-card: #1a1f2e;
+            --border-color: #1e2538;
+            --text-primary: #e8eaed;
+            --text-secondary: #94a3b8;
+            --accent-primary: #6366f1;
+            --accent-secondary: #8b5cf6;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: var(--bg-primary);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            color: var(--text-primary);
+        }
+        
+        /* 顶部导航栏 */
+        .header {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+        
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .header h1 {
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        .header-actions {
+            display: flex;
+            gap: 12px;
+        }
+        
+        .header-btn {
+            padding: 8px 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .header-btn:hover {
+            background: var(--border-color);
+            border-color: var(--accent-primary);
+        }
+        
+        /* 主体内容区 */
+        .main-container {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+        
+        /* 侧边栏（数据面板） */
+        .sidebar {
+            width: 320px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border-color);
+            overflow-y: auto;
+            padding: 20px;
+            flex-shrink: 0;
+        }
+        
+        .sidebar-section {
+            margin-bottom: 24px;
+        }
+        
+        .sidebar-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .data-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+        }
+        
+        .data-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        
+        .data-card-title {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+        
+        .data-card-value {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--accent-primary);
+        }
+        
+        .data-card-trend {
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .trend-up {
+            color: #10b981;
+        }
+        
+        .trend-down {
+            color: #ef4444;
+        }
+        
+        .quick-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        
+        .stat-item {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 12px;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--accent-primary);
+        }
+        
+        .stat-label {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+        
+        /* 对话区域 */
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .chat-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+        }
+        
+        .chat-messages {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        .message {
+            margin-bottom: 24px;
+            display: flex;
+            gap: 16px;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .message.user {
+            flex-direction: row-reverse;
+        }
+        
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+        
+        .message-content {
+            max-width: 70%;
+            padding: 14px 18px;
+            border-radius: 12px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+        
+        .message.user .message-content {
+            background: var(--bg-secondary);
+            border-color: var(--accent-primary);
+        }
+        
+        .message-time {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 6px;
+        }
+        
+        /* 数据表格 */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 12px;
+            background: var(--bg-card);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .data-table th {
+            background: var(--bg-secondary);
+            padding: 12px 16px;
+            text-align: left;
+            font-size: 12px;
+            color: var(--text-secondary);
+            font-weight: 500;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .data-table td {
+            padding: 12px 16px;
+            font-size: 13px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .data-table tr:last-child td {
+            border-bottom: none;
+        }
+        
+        /* 输入区域 */
+        .input-container {
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border-color);
+            padding: 16px 24px;
+            flex-shrink: 0;
+        }
+        
+        .input-wrapper {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        .agent-selector {
+            margin-bottom: 12px;
+        }
+        
+        .agent-selector select {
+            width: 100%;
+            padding: 10px 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 14px;
+            cursor: pointer;
+        }
+        
+        .agent-selector select:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+        }
+        
+        .input-row {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        
+        .input-row input {
+            flex: 1;
+            padding: 12px 16px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+        
+        .input-row input:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+        }
+        
+        .send-btn {
+            padding: 12px 32px;
+            background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .send-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4);
+        }
+        
+        /* 快捷命令 */
+        .quick-commands {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .command-btn {
+            padding: 6px 12px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            color: var(--text-secondary);
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .command-btn:hover {
+            border-color: var(--accent-primary);
+            color: var(--accent-primary);
+            background: var(--bg-primary);
+        }
+        
+        /* 报表模态框 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal.show {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-header h2 {
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 24px;
+            cursor: pointer;
+            padding: 4px;
+        }
+        
+        .modal-close:hover {
+            color: var(--text-primary);
+        }
+        
+        .modal-body {
+            padding: 24px;
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 1024px) {
+            .sidebar {
+                width: 280px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .header {
+                padding: 12px 16px;
+            }
+            
+            .header h1 {
+                font-size: 16px;
+            }
+            
+            .header-btn {
+                padding: 6px 12px;
+                font-size: 12px;
+            }
+            
+            .main-container {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                height: 200px;
+                border-right: none;
+                border-bottom: 1px solid var(--border-color);
+            }
+            
+            .chat-container {
+                padding: 16px;
+            }
+            
+            .message-content {
+                max-width: 85%;
+            }
+            
+            .input-container {
+                padding: 12px 16px;
+            }
+            
+            .input-row {
+                flex-direction: column;
+            }
+            
+            .send-btn {
+                width: 100%;
+            }
+            
+            .quick-commands {
+                overflow-x: auto;
+                flex-wrap: nowrap;
+            }
+        }
+        
+        /* 滚动条样式 */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: var(--bg-primary);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent-primary);
+        }
+    </style>
+</head>
+<body>
+    <!-- 顶部导航栏 -->
+    <div class="header">
+        <div class="header-left">
+            <h1>🏛️ 心海法律 AI · COO 管理后台</h1>
+        </div>
+        <div class="header-actions">
+            <button class="header-btn" onclick="showReports()">📊 报表</button>
+            <button class="header-btn" onclick="showSettings()">⚙️ 设置</button>
+            <button class="header-btn" onclick="logout()">退出</button>
+        </div>
+    </div>
+    
+    <!-- 主体内容区 -->
+    <div class="main-container">
+        <!-- 侧边栏（数据面板） -->
+        <div class="sidebar">
+            <!-- 今日数据 -->
+            <div class="sidebar-section">
+                <div class="sidebar-title">
+                    📊 今日数据
+                </div>
+                <div class="quick-stats">
+                    <div class="stat-item">
+                        <div class="stat-value" id="todayMembers">0</div>
+                        <div class="stat-label">新增会员</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="todayToken">0</div>
+                        <div class="stat-label">Token 消耗</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="todayConsult">0</div>
+                        <div class="stat-label">AI 咨询</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="todayDoc">0</div>
+                        <div class="stat-label">文书生成</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 会员统计 -->
+            <div class="sidebar-section">
+                <div class="sidebar-title">
+                    👥 会员统计
+                </div>
+                <div class="data-card">
+                    <div class="data-card-header">
+                        <span class="data-card-title">总会员数</span>
+                        <span class="data-card-value" id="totalMembers">0</span>
+                    </div>
+                    <div class="data-card-trend trend-up">
+                        <span>↑ 12.5%</span>
+                        <span>较上月</span>
+                    </div>
+                </div>
+                <div class="data-card">
+                    <div class="data-card-header">
+                        <span class="data-card-title">今日新增</span>
+                        <span class="data-card-value" id="todayNewMembers">0</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Token 统计 -->
+            <div class="sidebar-section">
+                <div class="sidebar-title">
+                    💰 Token 统计
+                </div>
+                <div class="data-card">
+                    <div class="data-card-header">
+                        <span class="data-card-title">总充值</span>
+                        <span class="data-card-value" id="totalRecharge">0</span>
+                    </div>
+                </div>
+                <div class="data-card">
+                    <div class="data-card-header">
+                        <span class="data-card-title">总消耗</span>
+                        <span class="data-card-value" id="totalConsume">0</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 合伙人统计 -->
+            <div class="sidebar-section">
+                <div class="sidebar-title">
+                    🤝 合伙人统计
+                </div>
+                <div class="data-card">
+                    <div class="data-card-header">
+                        <span class="data-card-title">总合伙人</span>
+                        <span class="data-card-value" id="totalPartners">0</span>
+                    </div>
+                </div>
+                <div class="data-card">
+                    <div class="data-card-header">
+                        <span class="data-card-title">总佣金</span>
+                        <span class="data-card-value" id="totalCommission">¥0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 对话区域 -->
+        <div class="chat-area">
+            <div class="chat-container">
+                <div class="chat-messages" id="chatMessages">
+                    <!-- 欢迎消息 -->
+                    <div class="message">
+                        <div class="avatar">🤖</div>
+                        <div>
+                            <div class="message-content">
+                                <p>总裁好，我是 COO。有什么可以帮您？</p>
+                                <p style="margin-top: 8px; color: var(--text-secondary);">您可以：</p>
+                                <ul style="margin-top: 4px; margin-left: 20px; color: var(--text-secondary);">
+                                    <li>查询业务数据（会员/Token/合伙人/积分）</li>
+                                    <li>查看报表（销售/用户/业务）</li>
+                                    <li>配置系统参数</li>
+                                    <li>分配任务给我和 16 个数字员工</li>
+                                </ul>
+                            </div>
+                            <div class="message-time">刚刚</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 输入区域 -->
+            <div class="input-container">
+                <div class="input-wrapper">
+                    <!-- 选择对话对象 -->
+                    <div class="agent-selector">
+                        <select id="agentSelector">
+                            <option value="coo">👔 COO（首席运营官）</option>
+                            <option value="xingmou">⭐ 星谋（战略官）</option>
+                            <option value="moyan">🖋️ 墨言（内容官）</option>
+                            <option value="poquan">📈 破圈（增长官）</option>
+                            <option value="nuanxin">💝 暖心（服务官）</option>
+                            <option value="dongcha">📊 洞察（分析师）</option>
+                            <option value="chuwang">📱 触网（社媒官）</option>
+                            <option value="ludian">📚 律典（知识官）</option>
+                            <option value="lantn">📐 蓝图（产品官）</option>
+                            <option value="jiangxin">🎨 匠心（设计官）</option>
+                            <option value="zhuji">🏗️ 铸基（架构师）</option>
+                            <option value="lingzhi">💻 灵指（编码官）</option>
+                            <option value="mingjian">🔍 明鉴（审查官）</option>
+                            <option value="tiebi">🛡️ 铁壁（测试官）</option>
+                            <option value="panshi">🪨 磐石（运维官）</option>
+                            <option value="qiusuo">🔬 求索（学习官）</option>
+                            <option value="tiewei">🔒 铁卫（安全官）</option>
+                        </select>
+                    </div>
+                    
+                    <!-- 输入框 -->
+                    <div class="input-row">
+                        <input 
+                            type="text" 
+                            id="messageInput" 
+                            placeholder="输入消息，或使用快捷命令（如：/会员 今日）"
+                            onkeypress="if(event.keyCode===13) sendMessage()"
+                        >
+                        <button class="send-btn" onclick="sendMessage()">发送</button>
+                    </div>
+                    
+                    <!-- 快捷命令 -->
+                    <div class="quick-commands">
+                        <button class="command-btn" onclick="sendCommand('/会员 今日')">/会员 今日</button>
+                        <button class="command-btn" onclick="sendCommand('/会员 统计')">/会员 统计</button>
+                        <button class="command-btn" onclick="sendCommand('/Token 余额')">/Token 余额</button>
+                        <button class="command-btn" onclick="sendCommand('/Token 充值')">/Token 充值</button>
+                        <button class="command-btn" onclick="sendCommand('/合伙人 排名')">/合伙人 排名</button>
+                        <button class="command-btn" onclick="sendCommand('/积分 统计')">/积分 统计</button>
+                        <button class="command-btn" onclick="sendCommand('/报表 销售')">/报表 销售</button>
+                        <button class="command-btn" onclick="sendCommand('/报表 用户')">/报表 用户</button>
+                        <button class="command-btn" onclick="sendCommand('/设置 通知')">/设置 通知</button>
+                        <button class="command-btn" onclick="sendCommand('/帮助')">/帮助</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 报表模态框 -->
+    <div class="modal" id="reportModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>📊 数据报表</h2>
+                <button class="modal-close" onclick="closeModal('reportModal')">&times;</button>
+            </div>
+            <div class="modal-body" id="reportBody">
+                <!-- 报表内容动态加载 -->
+                <p style="color: var(--text-secondary);">加载中...</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 设置模态框 -->
+    <div class="modal" id="settingsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>⚙️ 系统设置</h2>
+                <button class="modal-close" onclick="closeModal('settingsModal')">&times;</button>
+            </div>
+            <div class="modal-body" id="settingsBody">
+                <!-- 设置内容动态加载 -->
+                <p style="color: var(--text-secondary);">加载中...</p>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // 配置
+        const CONFIG = {
+            API_BASE: '/api/v1',
+            TOKEN: localStorage.getItem('coo_token') || 'dev_token_123456',
+            PRESIDENT_ID: 1
+        };
+        
+        // 模拟数据（开发模式）
+        const MOCK_DATA = {
+            todayMembers: 15,
+            todayToken: 25800,
+            todayConsult: 48,
+            todayDoc: 12,
+            totalMembers: 328,
+            totalRecharge: 158000,
+            totalConsume: 126500,
+            totalPartners: 56,
+            totalCommission: 28600
+        };
+        
+        // 页面加载时初始化
+        window.addEventListener('load', function() {
+            // 检查登录状态
+            const token = localStorage.getItem('coo_token');
+            if (!token) {
+                window.location.href = '/coo/login.html';
+                return;
+            }
+            
+            // 加载数据
+            loadDashboardData();
+        });
+        
+        // 加载仪表板数据
+        async function loadDashboardData() {
+            try {
+                // 开发模式：使用模拟数据
+                updateDashboard(MOCK_DATA);
+                
+                // 生产环境取消注释
+                /*
+                const response = await fetch(CONFIG.API_BASE + '/dashboard/coo', {
+                    headers: {
+                        'Authorization': 'Bearer ' + CONFIG.TOKEN
+                    }
+                });
+                const data = await response.json();
+                if (data.success) {
+                    updateDashboard(data.data);
+                }
+                */
+            } catch (error) {
+                console.error('加载数据失败:', error);
+            }
+        }
+        
+        // 更新仪表板
+        function updateDashboard(data) {
+            document.getElementById('todayMembers').textContent = data.todayMembers || 0;
+            document.getElementById('todayToken').textContent = data.todayToken || 0;
+            document.getElementById('todayConsult').textContent = data.todayConsult || 0;
+            document.getElementById('todayDoc').textContent = data.todayDoc || 0;
+            document.getElementById('totalMembers').textContent = data.totalMembers || 0;
+            document.getElementById('todayNewMembers').textContent = data.todayMembers || 0;
+            document.getElementById('totalRecharge').textContent = data.totalRecharge || 0;
+            document.getElementById('totalConsume').textContent = data.totalConsume || 0;
+            document.getElementById('totalPartners').textContent = data.totalPartners || 0;
+            document.getElementById('totalCommission').textContent = '¥' + (data.totalCommission || 0);
+        }
+        
+        // 发送消息
+        async function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            // 添加用户消息
+            addMessage(message, 'user');
+            input.value = '';
+            
+            // 获取选择的 Agent
+            const agentSelector = document.getElementById('agentSelector');
+            const agent = agentSelector.value;
+            
+            // 处理快捷命令
+            if (message.startsWith('/')) {
+                handleCommand(message, agent);
+                return;
+            }
+            
+            // 发送到后端
+            try {
+                const response = await fetch(CONFIG.API_BASE + '/chat/send', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + CONFIG.TOKEN
+                    },
+                    body: JSON.stringify({
+                        message: message,
+                        agent: agent,
+                        user_id: CONFIG.PRESIDENT_ID
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    addMessage(data.response, 'agent');
+                } else {
+                    addMessage('抱歉，处理失败：' + (data.message || '未知错误'), 'agent');
+                }
+            } catch (error) {
+                // 开发模式：模拟响应
+                console.log('开发模式，模拟响应');
+                setTimeout(() => {
+                    addMessage('总裁，我是 COO。收到您的消息："' + message + '"\n\n（开发模式：后端对接中）', 'agent');
+                }, 500);
+            }
+        }
+        
+        // 发送快捷命令
+        function sendCommand(command) {
+            document.getElementById('messageInput').value = command;
+            sendMessage();
+        }
+        
+        // 处理命令
+        function handleCommand(command, agent) {
+            setTimeout(() => {
+                let response = '';
+                
+                if (command === '/会员 今日') {
+                    response = '📊 **今日会员数据**\n\n' +
+                        '新增会员：15 人\n' +
+                        '总会员：328 人\n' +
+                        '会员转化率：12.5%';
+                } else if (command === '/会员 统计') {
+                    response = '📊 **会员统计**\n\n' +
+                        '| 类型 | 数量 |\n' +
+                        '|------|------|\n' +
+                        '| 月卡 | 128 人 |\n' +
+                        '| 季卡 | 98 人 |\n' +
+                        '| 年卡 | 102 人 |';
+                } else if (command === '/Token 余额') {
+                    response = '💰 **Token 余额**\n\n' +
+                        '总充值：158,000 Token\n' +
+                        '总消耗：126,500 Token\n' +
+                        '剩余余额：31,500 Token';
+                } else if (command === '/合伙人 排名') {
+                    response = '🤝 **合伙人排名**\n\n' +
+                        '| 排名 | 姓名 | 推荐数 | 佣金 |\n' +
+                        '|------|------|--------|------|\n' +
+                        '| 1 | 张三 | 28 | ¥5,600 |\n' +
+                        '| 2 | 李四 | 22 | ¥4,400 |\n' +
+                        '| 3 | 王五 | 18 | ¥3,600 |';
+                } else if (command === '/报表 销售') {
+                    showSalesReport();
+                    return;
+                } else {
+                    response = '总裁，收到您的命令：' + command + '\n\n（开发模式：功能对接中）';
+                }
+                
+                addMessage(response, 'agent');
+            }, 500);
+        }
+        
+        // 显示销售报表
+        function showSalesReport() {
+            const reportBody = document.getElementById('reportBody');
+            reportBody.innerHTML = `
+                <div class="data-card">
+                    <div class="data-card-header">
+                        <span class="data-card-title">今日销售额</span>
+                        <span class="data-card-value">¥2,580</span>
+                    </div>
+                    <div class="data-card-trend trend-up">
+                        <span>↑ 18.2%</span>
+                        <span>较昨日</span>
+                    </div>
+                </div>
+                
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>产品</th>
+                            <th>销量</th>
+                            <th>销售额</th>
+                            <th>占比</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>会员月卡</td>
+                            <td>28</td>
+                            <td>¥840</td>
+                            <td>32.6%</td>
+                        </tr>
+                        <tr>
+                            <td>会员季卡</td>
+                            <td>12</td>
+                            <td>¥960</td>
+                            <td>37.2%</td>
+                        </tr>
+                        <tr>
+                            <td>会员年卡</td>
+                            <td>3</td>
+                            <td>¥864</td>
+                            <td>33.5%</td>
+                        </tr>
+                        <tr>
+                            <td>Token 充值</td>
+                            <td>15</td>
+                            <td>¥1,916</td>
+                            <td>74.3%</td>
+                        </tr>
+                    </tbody>
+                </table>
+            `;
+            document.getElementById('reportModal').classList.add('show');
+        }
+        
+        // 显示报表
+        function showReports() {
+            showSalesReport();
+        }
+        
+        // 显示设置
+        function showSettings() {
+            const settingsBody = document.getElementById('settingsBody');
+            settingsBody.innerHTML = `
+                <div class="data-card">
+                    <h3 style="margin-bottom: 16px; font-size: 14px;">通知设置</h3>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <span>开启通知</span>
+                        <input type="checkbox" checked>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span>数据刷新频率</span>
+                        <select style="padding: 6px 12px; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 4px; color: var(--text-primary);">
+                            <option>5 分钟</option>
+                            <option>10 分钟</option>
+                            <option>30 分钟</option>
+                            <option>1 小时</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="data-card">
+                    <h3 style="margin-bottom: 16px; font-size: 14px;">账号安全</h3>
+                    <div style="margin-bottom: 12px;">
+                        <label style="display: block; color: var(--text-secondary); font-size: 12px; margin-bottom: 6px;">手机号</label>
+                        <input type="text" value="138****8888" readonly style="width: 100%; padding: 10px; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-primary);">
+                    </div>
+                    <button class="header-btn" style="width: 100%;">修改手机号</button>
+                </div>
+            `;
+            document.getElementById('settingsModal').classList.add('show');
+        }
+        
+        // 关闭模态框
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('show');
+        }
+        
+        // 添加消息
+        function addMessage(content, type) {
+            const chatMessages = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message ' + type;
+            
+            const avatar = type === 'user' ? '👤' : '🤖';
+            const time = new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+            
+            // 处理 Markdown 格式
+            const formattedContent = content
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\n/g, '<br>');
+            
+            messageDiv.innerHTML = `
+                <div class="avatar">${avatar}</div>
+                <div>
+                    <div class="message-content">
+                        <p style="white-space: pre-wrap;">${formattedContent}</p>
+                    </div>
+                    <div class="message-time">${time}</div>
+                </div>
+            `;
+            
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        
+        // 退出登录
+        function logout() {
+            if (confirm('确定要退出登录吗？')) {
+                localStorage.removeItem('coo_token');
+                localStorage.removeItem('coo_user');
+                window.location.href = '/coo/login.html';
+            }
+        }
+        
+        // 点击模态框外部关闭
+        window.addEventListener('click', function(e) {
+            if (e.target.classList.contains('modal')) {
+                e.target.classList.remove('show');
+            }
+        });
+    </script>
+</body>
+</html>

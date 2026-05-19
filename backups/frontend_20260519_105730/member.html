@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>会员中心 - 心海法律 AI</title>
+    <style>
+        :root{--bg-primary:#0a0e1a;--bg-secondary:#131825;--border:#1e2538;--text-primary:#e8eaed;--text-secondary:#94a3b8;--accent-primary:#6366f1;--success:#22c55e}
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg-primary);color:var(--text-primary);min-height:100vh}
+        .container{max-width:1200px;margin:0 auto;padding:20px}
+        .header{text-align:center;padding:40px 20px;background:linear-gradient(135deg,var(--bg-secondary),#1a1f2e);border-radius:16px;margin-bottom:30px}
+        .header h1{font-size:32px;margin-bottom:10px}
+        .plans-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px;margin-bottom:30px}
+        .plan-card{background:var(--bg-secondary);border:1px solid var(--border);border-radius:16px;padding:30px;cursor:pointer;transition:all 0.3s}
+        .plan-card:hover{border-color:var(--accent-primary);transform:translateY(-4px)}
+        .plan-card.recommended{border-color:var(--accent-primary);background:linear-gradient(135deg,rgba(99,102,241,0.1),rgba(139,92,246,0.1))}
+        .plan-name{font-size:20px;font-weight:600;margin-bottom:8px}
+        .plan-price{font-size:36px;font-weight:700;color:var(--accent-primary);margin-bottom:16px}
+        .plan-price span{font-size:16px;color:var(--text-secondary);font-weight:400}
+        .plan-features{list-style:none;margin-bottom:24px}
+        .plan-features li{padding:8px 0;border-bottom:1px solid var(--border);font-size:14px}
+        .plan-features li:last-child{border-bottom:none}
+        .btn{width:100%;padding:14px;border:none;border-radius:12px;font-size:16px;font-weight:600;cursor:pointer}
+        .btn-primary{background:linear-gradient(135deg,var(--accent-primary),#8b5cf6);color:white}
+        .btn-outline{background:transparent;border:2px solid var(--accent-primary);color:var(--accent-primary)}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header"><h1>💎 会员中心</h1><p>开通会员，解锁全部 AI 法律功能</p></div>
+        <div class="member-status" style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:16px;padding:30px;margin-bottom:30px">
+            <div class="status-card"><h2>当前状态</h2><div class="plan-name" id="currentPlan">未开通会员</div><div class="expires" id="expiresInfo">开通会员解锁全部功能</div></div>
+        </div>
+        <h3 style="margin-bottom:20px">选择套餐</h3>
+        <div class="plans-grid">
+            <div class="plan-card" onclick="selectPlan('trial')"><div class="plan-name">新人福利</div><div class="plan-price">免费<span>/3 天</span></div><ul class="plan-features"><li>AI 法律咨询</li><li>文书生成 (限 3 份)</li></ul><button class="btn btn-outline" id="btn-trial">立即领取</button></div>
+            <div class="plan-card recommended" onclick="selectPlan('first_month')"><div class="plan-name">连续包月</div><div class="plan-price">¥1<span>/首月</span></div><ul class="plan-features"><li>AI 法律咨询无限次</li><li>文书生成无限次</li><li>合同审阅</li></ul><button class="btn btn-primary" id="btn-first_month">立即开通</button></div>
+            <div class="plan-card" onclick="selectPlan('monthly')"><div class="plan-name">月卡</div><div class="plan-price">¥30<span>/30 天</span></div><ul class="plan-features"><li>AI 法律咨询无限次</li><li>文书生成无限次</li></ul><button class="btn btn-outline" id="btn-monthly">立即购买</button></div>
+            <div class="plan-card" onclick="selectPlan('quarterly')"><div class="plan-name">季卡</div><div class="plan-price">¥80<span>/90 天</span></div><ul class="plan-features"><li>AI 法律咨询无限次</li><li>文书生成无限次</li><li>专属客服</li></ul><button class="btn btn-outline" id="btn-quarterly">立即购买</button></div>
+            <div class="plan-card" onclick="selectPlan('yearly')"><div class="plan-name">年卡</div><div class="plan-price">¥288<span>/365 天</span></div><ul class="plan-features"><li>AI 法律咨询无限次</li><li>文书生成无限次</li><li>VIP 标识</li></ul><button class="btn btn-outline" id="btn-yearly">立即购买</button></div>
+        </div>
+    </div>
+    <script>
+        async function loadMemberStatus(){try{const r=await fetch('/api/v1/member/status');const d=await r.json();if(d.is_member){document.getElementById('currentPlan').textContent=d.plan_name;document.getElementById('expiresInfo').textContent='有效期至 '+new Date(d.expires_at).toLocaleDateString();}else{document.getElementById('currentPlan').textContent='未开通会员';}}catch(e){console.error(e);}}
+        async function selectPlan(pt){const names={'trial':'新人福利','first_month':'连续包月','monthly':'月卡','quarterly':'季卡','yearly':'年卡'};if(!confirm('确认开通'+names[pt]+'吗？'))return;try{const btn=document.getElementById('btn-'+pt);btn.textContent='处理中...';btn.disabled=true;const r=await fetch('/api/v1/member/activate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({plan_type:pt,payment_method:'wechat'})});const d=await r.json();if(d.success){alert(d.message);loadMemberStatus();}else{alert('失败：'+d.error);btn.textContent='重新尝试';btn.disabled=false;}}catch(e){alert('网络错误');}}
+        loadMemberStatus();
+    </script>
+</body>
+</html>

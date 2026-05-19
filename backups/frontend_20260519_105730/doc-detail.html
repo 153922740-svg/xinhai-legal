@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文书详情 - 心海法律 AI</title>
+    <style>
+        :root{--bg-primary:#0a0e1a;--bg-secondary:#131825;--bg-card:#1a1f2e;--border:#1e2538;--text-primary:#e8eaed;--text-secondary:#94a3b8;--accent-primary:#6366f1;--accent-secondary:#8b5cf6;--success:#22c55e}
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg-primary);color:var(--text-primary);min-height:100vh;padding:20px}
+        .container{max-width:800px;margin:0 auto}
+        .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+        .header h1{font-size:20px}
+        .actions{display:flex;gap:10px}
+        .btn{padding:10px 16px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:8px;color:var(--text-primary);font-size:14px;cursor:pointer}
+        .btn-primary{background:linear-gradient(135deg,var(--accent-primary),var(--accent-secondary));border:none}
+        .btn-success{background:var(--success);border:none}
+        .card{background:var(--bg-card);border:1px solid var(--border);border-radius:16px;padding:20px;margin-bottom:20px}
+        .doc-header{border-bottom:1px solid var(--border);padding-bottom:15px;margin-bottom:15px}
+        .doc-title{font-size:18px;font-weight:600;margin-bottom:10px}
+        .doc-meta{display:flex;gap:15px;font-size:12px;color:var(--text-secondary)}
+        .doc-type{background:var(--accent-primary);padding:2px 8px;border-radius:4px;color:white}
+        .editor{width:100%;min-height:400px;padding:15px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:12px;color:var(--text-primary);font-size:15px;line-height:1.8;resize:vertical;font-family:'SimSun',serif}
+        .editor:focus{outline:none;border-color:var(--accent-primary)}
+        .preview{line-height:2;font-size:15px;white-space:pre-wrap}
+        .download-section{display:flex;gap:10px;margin-top:20px}
+        .toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.8);color:white;padding:12px 24px;border-radius:8px;font-size:14px;z-index:1000;display:none}
+        .mode-switch{display:flex;gap:10px;margin-bottom:15px}
+        .mode-btn{padding:8px 16px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:6px;font-size:13px;cursor:pointer}
+        .mode-btn.active{background:var(--accent-primary);border-color:var(--accent-primary)}
+    </style>
+</head>
+<body>
+    <div class="toast" id="toast"></div>
+    <div class="container">
+        <div class="header">
+            <h1>📄 文书详情</h1>
+            <div class="actions">
+                <button class="btn" id="editBtn" onclick="toggleEdit()">✏️ 编辑</button>
+                <button class="btn btn-primary" onclick="saveDocument()" id="saveBtn" style="display:none">💾 保存</button>
+                <button class="btn btn-success" onclick="download('word')">⬇️ Word</button>
+                <button class="btn btn-success" onclick="download('pdf')">⬇️ PDF</button>
+                <button class="btn" onclick="shareDocument()">📤 分享</button>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="doc-header">
+                <div class="doc-title" id="docTitle">加载中...</div>
+                <div class="doc-meta">
+                    <span class="doc-type" id="docType">---</span>
+                    <span id="docDate">创建时间：---</span>
+                    <span id="docViews">浏览：0 次</span>
+                </div>
+            </div>
+            
+            <div class="mode-switch" id="modeSwitch" style="display:none">
+                <button class="mode-btn active" onclick="switchMode('edit')">编辑模式</button>
+                <button class="mode-btn" onclick="switchMode('preview')">预览模式</button>
+            </div>
+            
+            <textarea class="editor" id="docContent" placeholder="文书内容..."></textarea>
+            <div class="preview" id="docPreview" style="display:none"></div>
+        </div>
+    </div>
+    
+    <script>
+        const docId = new URLSearchParams(window.location.search).get('id');
+        const userId = localStorage.getItem('user_id');
+        let isEditing = false;
+        let currentMode = 'preview';
+        let documentData = null;
+        
+        window.onload = function() {
+            if (!docId) {
+                window.location.href = '/document.html';
+                return;
+            }
+            loadDocument();
+        };
+        
+        async function loadDocument() {
+            try {
+                const r = await fetch(`/api/v1/document/${docId}/detail`);
+                const d = await r.json();
+                
+                if (d.code === 200) {
+                    documentData = d.data;
+                    document.getElementById('docTitle').textContent = d.data.title;
+                    document.getElementById('docType').textContent = getDocTypeName(d.data.doc_type);
+                    document.getElementById('docDate').textContent = '创建时间：' + new Date(d.data.created_at).toLocaleDateString();
+                    document.getElementById('docViews').textContent = '浏览：' + (d.data.view_count || 0) + '次';
+                    document.getElementById('docContent').value = d.data.content;
+                    document.getElementById('docPreview').textContent = d.data.content;
+                } else {
+                    showToast(d.message);
+                    setTimeout(() => window.location.href = '/document.html', 1000);
+                }
+            } catch(e) {
+                showToast('加载失败');
+            }
+        }
+        
+        function getDocTypeName(type) {
+            const names = {
+                'civil_complaint': '民事起诉状',
+                'defense': '答辩状',
+                'lawyer_letter': '律师函',
+                'rental_contract': '租房合同',
+                'loan_agreement': '借款协议',
+                'divorce_agreement': '离婚协议',
+                'labor_arbitration': '劳动仲裁申请书',
+                'debt_transfer': '债权转让协议',
+                'settlement': '和解协议'
+            };
+            return names[type] || type;
+        }
+        
+        function toggleEdit() {
+            isEditing = !isEditing;
+            const editBtn = document.getElementById('editBtn');
+            const saveBtn = document.getElementById('saveBtn');
+            const modeSwitch = document.getElementById('modeSwitch');
+            const content = document.getElementById('docContent');
+            const preview = document.getElementById('docPreview');
+            
+            if (isEditing) {
+                editBtn.textContent = '👁️ 查看';
+                saveBtn.style.display = 'block';
+                modeSwitch.style.display = 'flex';
+                content.style.display = 'block';
+                preview.style.display = 'none';
+                content.disabled = false;
+            } else {
+                editBtn.textContent = '✏️ 编辑';
+                saveBtn.style.display = 'none';
+                modeSwitch.style.display = 'none';
+                content.style.display = 'none';
+                preview.style.display = 'block';
+                preview.textContent = content.value;
+            }
+        }
+        
+        function switchMode(mode) {
+            currentMode = mode;
+            const content = document.getElementById('docContent');
+            const preview = document.getElementById('docPreview');
+            
+            document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            if (mode === 'edit') {
+                content.style.display = 'block';
+                preview.style.display = 'none';
+            } else {
+                content.style.display = 'none';
+                preview.style.display = 'block';
+                preview.textContent = content.value;
+            }
+        }
+        
+        async function saveDocument() {
+            const content = document.getElementById('docContent').value;
+            
+            try {
+                const r = await fetch(`/api/v1/document/${docId}`, {
+                    method: 'PUT',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({content: content})
+                });
+                const d = await r.json();
+                
+                if (d.code === 200) {
+                    showToast('保存成功');
+                    document.getElementById('docPreview').textContent = content;
+                    toggleEdit();
+                } else {
+                    showToast('保存失败：' + d.message);
+                }
+            } catch(e) {
+                showToast('保存失败，请稍后重试');
+            }
+        }
+        
+        function download(format) {
+            window.open(`/api/v1/document/${docId}/download?format=${format}`, '_blank');
+            showToast(`正在下载${format.toUpperCase()}文件...`);
+        }
+        
+        async function shareDocument() {
+            try {
+                const r = await fetch(`/api/v1/document/${docId}/share`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({share_type: 'wechat'})
+                });
+                const d = await r.json();
+                
+                if (d.code === 200) {
+                    // 复制链接
+                    navigator.clipboard.writeText(d.data.share_url).then(() => {
+                        showToast('分享链接已复制！');
+                    });
+                } else {
+                    showToast(d.message);
+                }
+            } catch(e) {
+                showToast('分享失败');
+            }
+        }
+        
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.style.display = 'block';
+            setTimeout(() => {
+                toast.style.display = 'none';
+            }, 2000);
+        }
+    </script>
+</body>
+</html>

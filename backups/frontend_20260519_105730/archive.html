@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>法律档案 - 心海法律 AI</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0a0e1a;
+            color: #e8eaed;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .header h1 { font-size: 24px; font-weight: 600; }
+        .add-btn {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        .search-bar {
+            background: #131825;
+            border: 1px solid #1e2538;
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        .search-bar input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: #e8eaed;
+            font-size: 14px;
+            outline: none;
+        }
+        .filter-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .filter-tab {
+            background: #131825;
+            border: 1px solid #1e2538;
+            color: #94a3b8;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            cursor: pointer;
+        }
+        .filter-tab.active {
+            background: #6366f1;
+            color: white;
+            border-color: #6366f1;
+        }
+        .archive-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .archive-card {
+            background: #1a1f2e;
+            border: 1px solid #1e2538;
+            border-radius: 12px;
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .archive-card:hover {
+            border-color: #6366f1;
+            transform: translateY(-2px);
+        }
+        .archive-title {
+            font-size: 16px;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+        .archive-meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #94a3b8;
+        }
+        .status-badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+        }
+        .status-ongoing {
+            background: rgba(99, 102, 241, 0.2);
+            color: #6366f1;
+        }
+        .status-closed {
+            background: rgba(148, 163, 184, 0.2);
+            color: #94a3b8;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #94a3b8;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📁 法律档案</h1>
+        <button class="add-btn" onclick="createNewArchive()">+ 新建档案</button>
+    </div>
+    
+    <div class="search-bar">
+        <input type="text" placeholder="搜索案件名称、当事人、案号..." id="searchInput">
+        <button class="add-btn" style="padding: 8px 16px;" onclick="searchArchive()">搜索</button>
+    </div>
+    
+    <div class="filter-tabs">
+        <div class="filter-tab active" onclick="filterArchive('all', this)">全部</div>
+        <div class="filter-tab" onclick="filterArchive('ongoing', this)">进行中</div>
+        <div class="filter-tab" onclick="filterArchive('closed', this)">已结案</div>
+    </div>
+    
+    <div class="archive-list" id="archiveList">
+        <!-- 档案列表由 JS 动态加载 -->
+    </div>
+    
+    <div class="empty-state" id="emptyState" style="display: none;">
+        <p>暂无档案</p>
+        <p style="font-size: 12px; margin-top: 8px;">点击右上角按钮新建档案</p>
+    </div>
+
+    <script>
+        let currentFilter = 'all';
+        
+        // 加载档案列表
+        async function loadArchives() {
+            try {
+                const response = await fetch('/api/archives?status=' + currentFilter);
+                const data = await response.json();
+                renderArchives(data.archives || []);
+            } catch (e) {
+                console.error('加载档案失败:', e);
+                renderArchives([]);
+            }
+        }
+        
+        // 渲染档案列表
+        function renderArchives(archives) {
+            const list = document.getElementById('archiveList');
+            const empty = document.getElementById('emptyState');
+            
+            if (archives.length === 0) {
+                list.innerHTML = '';
+                empty.style.display = 'block';
+                return;
+            }
+            
+            empty.style.display = 'none';
+            list.innerHTML = archives.map(archive => `
+                <div class="archive-card" onclick="viewArchive('${archive.id}')">
+                    <div class="archive-title">${archive.title}</div>
+                    <div class="archive-meta">
+                        <span>${archive.party} · ${archive.caseNo}</span>
+                        <span class="status-badge ${archive.status === 'ongoing' ? 'status-ongoing' : 'status-closed'}">
+                            ${archive.status === 'ongoing' ? '进行中' : '已结案'}
+                        </span>
+                    </div>
+                    <div class="archive-meta" style="margin-top: 8px;">
+                        <span>创建：${archive.createdAt}</span>
+                        <span>更新：${archive.updatedAt}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        // 筛选档案
+        function filterArchive(status, tab) {
+            currentFilter = status;
+            document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            loadArchives();
+        }
+        
+        // 搜索档案
+        function searchArchive() {
+            const keyword = document.getElementById('searchInput').value;
+            // TODO: 调用搜索 API
+            console.log('搜索:', keyword);
+        }
+        
+        // 新建档案
+        function createNewArchive() {
+            window.location.href = '/archive-create.html';
+        }
+        
+        // 查看档案详情
+        function viewArchive(id) {
+            window.location.href = '/archive-detail.html?id=' + id;
+        }
+        
+        // 初始化
+        loadArchives();
+    </script>
+</body>
+</html>

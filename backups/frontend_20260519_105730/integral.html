@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>积分中心 - 心海法律 AI</title>
+    <style>
+        :root{--bg-primary:#0a0e1a;--bg-secondary:#131825;--bg-card:#1a1f2e;--border:#1e2538;--text-primary:#e8eaed;--text-secondary:#94a3b8;--accent-primary:#6366f1;--accent-secondary:#8b5cf6;--success:#22c55e;--warning:#f59e0b}
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg-primary);color:var(--text-primary);min-height:100vh;padding:20px}
+        .container{max-width:800px;margin:0 auto}
+        .header{margin-bottom:30px}
+        .header h1{font-size:24px;margin-bottom:10px}
+        .balance-card{background:linear-gradient(135deg,var(--accent-primary),var(--accent-secondary));border-radius:16px;padding:25px;margin-bottom:20px}
+        .balance-card .label{font-size:14px;opacity:0.9;margin-bottom:8px}
+        .balance-card .value{font-size:36px;font-weight:600}
+        .balance-card .actions{margin-top:15px;display:flex;gap:10px}
+        .btn{padding:10px 20px;background:rgba(255,255,255,0.2);border:none;border-radius:8px;color:white;font-size:14px;cursor:pointer}
+        .card{background:var(--bg-card);border:1px solid var(--border);border-radius:16px;padding:20px;margin-bottom:20px}
+        .card h2{font-size:18px;margin-bottom:20px}
+        .task-list{display:flex;flex-direction:column;gap:15px}
+        .task-item{display:flex;justify-content:space-between;align-items:center;padding:15px;background:var(--bg-secondary);border-radius:12px}
+        .task-item .info{display:flex;align-items:center;gap:12px}
+        .task-item .icon{width:40px;height:40px;background:var(--bg-card);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px}
+        .task-item .name{font-size:15px;font-weight:500}
+        .task-item .desc{font-size:12px;color:var(--text-secondary)}
+        .task-item .points{font-size:14px;font-weight:500;color:var(--accent-primary)}
+        .task-item .btn{padding:8px 16px;background:var(--accent-primary);font-size:13px}
+        .task-item .btn:disabled{opacity:0.5;cursor:not-allowed}
+        .task-item .btn.completed{background:var(--success)}
+        .record-list{display:flex;flex-direction:column;gap:10px}
+        .record-item{display:flex;justify-content:space-between;padding:12px;border-bottom:1px solid var(--border)}
+        .record-item:last-child{border-bottom:none}
+        .record-item .type{font-size:14px}
+        .record-item .points{font-weight:500}
+        .record-item .points.positive{color:var(--success)}
+        .record-item .points.negative{color:#ef4444}
+        .record-item .time{font-size:12px;color:var(--text-secondary)}
+        .tabs{display:flex;gap:10px;margin-bottom:20px}
+        .tab{flex:1;text-align:center;padding:12px;background:var(--bg-secondary);border-radius:8px;cursor:pointer;font-size:14px}
+        .tab.active{background:var(--accent-primary);color:white}
+        .toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.8);color:white;padding:12px 24px;border-radius:8px;font-size:14px;z-index:1000;display:none}
+    </style>
+</head>
+<body>
+    <div class="toast" id="toast"></div>
+    <div class="container">
+        <div class="header">
+            <h1>🪙 积分中心</h1>
+        </div>
+        
+        <div class="balance-card">
+            <div class="label">我的积分</div>
+            <div class="value" id="pointsBalance">0</div>
+            <div class="actions">
+                <button class="btn" onclick="window.location.href='/signin.html'">📅 签到</button>
+                <button class="btn" onclick="window.location.href='/mall.html'">🎁 商城</button>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>📋 任务列表</h2>
+            <div class="tabs">
+                <div class="tab active" onclick="switchTab('daily')">每日任务</div>
+                <div class="tab" onclick="switchTab('one_time')">一次性任务</div>
+            </div>
+            <div class="task-list" id="taskList"></div>
+        </div>
+        
+        <div class="card">
+            <h2>📝 积分记录</h2>
+            <div class="record-list" id="recordList"></div>
+        </div>
+    </div>
+    
+    <script>
+        const userId = localStorage.getItem('user_id');
+        let currentTab = 'daily';
+        
+        window.onload = function() {
+            if (!userId) {
+                window.location.href = '/login.html';
+                return;
+            }
+            loadBalance();
+            loadTasks();
+            loadRecords();
+        };
+        
+        async function loadBalance() {
+            try {
+                const r = await fetch(`/api/v1/integral/balance?user_id=${userId}`);
+                const d = await r.json();
+                if (d.code === 200) {
+                    document.getElementById('pointsBalance').textContent = d.data.balance;
+                }
+            } catch(e) {
+                console.error(e);
+            }
+        }
+        
+        async function loadTasks() {
+            try {
+                const r = await fetch(`/api/v1/integral/tasks?user_id=${userId}`);
+                const d = await r.json();
+                
+                const list = document.getElementById('taskList');
+                let tasks = [];
+                
+                if (d.code === 200) {
+                    if (currentTab === 'daily') {
+                        tasks = d.data.tasks.daily || [];
+                    } else {
+                        tasks = d.data.tasks.one_time || [];
+                    }
+                    
+                    if (tasks.length === 0) {
+                        list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-secondary)">暂无任务</div>';
+                        return;
+                    }
+                    
+                    list.innerHTML = tasks.map(task => `
+                        <div class="task-item">
+                            <div class="info">
+                                <div class="icon">${getTaskIcon(task.id)}</div>
+                                <div>
+                                    <div class="name">${task.name}</div>
+                                    <div class="desc">${task.progress || (task.completed ? '已完成' : '未完成')}</div>
+                                </div>
+                            </div>
+                            <div>
+                                <span class="points">+${task.points}</span>
+                                ${task.completed ? '<button class="btn completed" disabled>✓</button>' : 
+                                  (task.id === 'profile' || task.id === 'verify') ? 
+                                  `<button class="btn" onclick="completeTask('${task.id}')">领取</button>` :
+                                  '<button class="btn" disabled>进行中</button>'}
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            } catch(e) {
+                console.error(e);
+            }
+        }
+        
+        function getTaskIcon(taskId) {
+            const icons = {
+                'consult': '💬',
+                'document': '📄',
+                'share': '📤',
+                'profile': '✏️',
+                'first_consult': '💬',
+                'first_document': '📄',
+                'bind_wx': '💚',
+                'verify': '✓'
+            };
+            return icons[taskId] || '🎁';
+        }
+        
+        function switchTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            loadTasks();
+        }
+        
+        async function completeTask(taskId) {
+            try {
+                const r = await fetch('/api/v1/integral/task/complete', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({user_id: userId, task_id: taskId})
+                });
+                const d = await r.json();
+                
+                if (d.code === 200) {
+                    showToast(`获得${d.data.points}积分！`);
+                    loadBalance();
+                    loadTasks();
+                    loadRecords();
+                } else {
+                    showToast(d.message);
+                }
+            } catch(e) {
+                showToast('操作失败');
+            }
+        }
+        
+        async function loadRecords() {
+            try {
+                const r = await fetch(`/api/v1/integral/records?user_id=${userId}&limit=10`);
+                const d = await r.json();
+                
+                const list = document.getElementById('recordList');
+                
+                if (d.code === 200 && d.data.items.length > 0) {
+                    list.innerHTML = d.data.items.map(record => `
+                        <div class="record-item">
+                            <div>
+                                <div class="type">${record.description || record.type}</div>
+                                <div class="time">${new Date(record.created_at).toLocaleString()}</div>
+                            </div>
+                            <div class="points ${record.points > 0 ? 'positive' : 'negative'}">
+                                ${record.points > 0 ? '+' : ''}${record.points}
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-secondary)">暂无记录</div>';
+                }
+            } catch(e) {
+                console.error(e);
+            }
+        }
+        
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.style.display = 'block';
+            setTimeout(() => toast.style.display = 'none', 2000);
+        }
+    </script>
+</body>
+</html>

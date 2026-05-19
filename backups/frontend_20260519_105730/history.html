@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>历史对话 - 心海法律 AI</title>
+    <style>
+        :root{--bg-primary:#0a0e1a;--bg-secondary:#131825;--bg-card:#1a1f2e;--border:#1e2538;--text-primary:#e8eaed;--text-secondary:#94a3b8;--accent-primary:#6366f1;--accent-secondary:#8b5cf6}
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg-primary);color:var(--text-primary);min-height:100vh;padding:20px}
+        .container{max-width:800px;margin:0 auto}
+        .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:30px}
+        .header h1{font-size:24px}
+        .btn{padding:10px 20px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:8px;color:var(--text-primary);font-size:14px;cursor:pointer}
+        .btn-primary{background:linear-gradient(135deg,var(--accent-primary),var(--accent-secondary));border:none}
+        .session-list{display:flex;flex-direction:column;gap:15px}
+        .session-card{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:20px;cursor:pointer;transition:all 0.3s}
+        .session-card:hover{border-color:var(--accent-primary);transform:translateX(5px)}
+        .session-card .title{font-size:16px;font-weight:500;margin-bottom:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .session-card .meta{display:flex;justify-content:space-between;font-size:12px;color:var(--text-secondary)}
+        .session-card .actions{display:none;gap:10px;margin-top:15px}
+        .session-card:hover .actions{display:flex}
+        .action-btn{padding:6px 12px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:6px;font-size:12px;cursor:pointer}
+        .action-btn.delete{color:#ef4444;border-color:#ef4444}
+        .empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;color:var(--text-secondary)}
+        .empty .icon{font-size:60px;margin-bottom:20px}
+        .empty .btn{margin-top:20px}
+        .modal{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);display:none;align-items:center;justify-content:center;z-index:1000}
+        .modal .content{background:var(--bg-card);border-radius:16px;padding:30px;width:90%;max-width:400px}
+        .modal input{width:100%;padding:14px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:12px;color:var(--text-primary);font-size:16px;margin:20px 0}
+        .modal .actions{display:flex;gap:10px}
+        .modal .actions button{flex:1;padding:14px;border-radius:12px;font-size:15px;cursor:pointer;border:none}
+        .modal .cancel{background:var(--bg-secondary);color:var(--text-primary)}
+        .modal .confirm{background:linear-gradient(135deg,var(--accent-primary),var(--accent-secondary));color:white}
+        .toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.8);color:white;padding:12px 24px;border-radius:8px;font-size:14px;z-index:1000;display:none}
+    </style>
+</head>
+<body>
+    <div class="toast" id="toast"></div>
+    <div class="container">
+        <div class="header">
+            <h1>📋 历史对话</h1>
+            <button class="btn btn-primary" onclick="window.location.href='/chat.html'">+ 新建对话</button>
+        </div>
+        <div class="session-list" id="sessionList">
+            <div class="empty">
+                <div class="icon">💬</div>
+                <div>暂无历史对话</div>
+                <button class="btn btn-primary" onclick="window.location.href='/chat.html'">开始咨询</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 重命名弹窗 -->
+    <div class="modal" id="renameModal">
+        <div class="content">
+            <h3>重命名会话</h3>
+            <input type="text" id="renameInput" placeholder="输入新标题" maxlength="50">
+            <div class="actions">
+                <button class="cancel" onclick="hideRenameModal()">取消</button>
+                <button class="confirm" onclick="confirmRename()">保存</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const userId = localStorage.getItem('user_id');
+        let currentSessionId = null;
+        
+        window.onload = function() {
+            if (!userId) {
+                window.location.href = '/login.html';
+                return;
+            }
+            loadSessions();
+        };
+        
+        async function loadSessions() {
+            try {
+                const r = await fetch(`/api/v1/chat/sessions?user_id=${userId}`);
+                const d = await r.json();
+                
+                const list = document.getElementById('sessionList');
+                
+                if (d.code === 200 && d.data.sessions.length > 0) {
+                    list.innerHTML = d.data.sessions.map(session => `
+                        <div class="session-card" onclick="openSession('${session.id}')">
+                            <div class="title">${session.title || '新对话'}</div>
+                            <div class="meta">
+                                <span>${new Date(session.updated_at).toLocaleDateString()}</span>
+                                <span>${session.message_count || 0} 条消息</span>
+                            </div>
+                            <div class="actions" onclick="event.stopPropagation()">
+                                <button class="action-btn" onclick="showRenameModal('${session.id}', '${session.title || '新对话'}')">✏️ 重命名</button>
+                                <button class="action-btn delete" onclick="deleteSession('${session.id}')">🗑️ 删除</button>
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    list.innerHTML = `
+                        <div class="empty">
+                            <div class="icon">💬</div>
+                            <div>暂无历史对话</div>
+                            <button class="btn btn-primary" onclick="window.location.href='/chat.html'">开始咨询</button>
+                        </div>
+                    `;
+                }
+            } catch(e) {
+                console.error(e);
+            }
+        }
+        
+        function openSession(sessionId) {
+            window.location.href = `/chat.html?session=${sessionId}`;
+        }
+        
+        function showRenameModal(sessionId, title) {
+            currentSessionId = sessionId;
+            document.getElementById('renameInput').value = title;
+            document.getElementById('renameModal').style.display = 'flex';
+        }
+        
+        function hideRenameModal() {
+            document.getElementById('renameModal').style.display = 'none';
+            currentSessionId = null;
+        }
+        
+        async function confirmRename() {
+            const title = document.getElementById('renameInput').value.trim();
+            if (!title) {
+                showToast('请输入标题');
+                return;
+            }
+            
+            try {
+                const r = await fetch(`/api/v1/chat/sessions/${currentSessionId}/rename`, {
+                    method: 'PUT',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({title: title})
+                });
+                const d = await r.json();
+                
+                if (d.code === 200) {
+                    showToast('重命名成功');
+                    hideRenameModal();
+                    loadSessions();
+                } else {
+                    showToast(d.message);
+                }
+            } catch(e) {
+                showToast('操作失败');
+            }
+        }
+        
+        async function deleteSession(sessionId) {
+            if (!confirm('确定删除该会话吗？删除后无法恢复。')) return;
+            
+            try {
+                const r = await fetch(`/api/v1/chat/sessions/${sessionId}`, {
+                    method: 'DELETE'
+                });
+                const d = await r.json();
+                
+                if (d.code === 200) {
+                    showToast('删除成功');
+                    loadSessions();
+                } else {
+                    showToast(d.message);
+                }
+            } catch(e) {
+                showToast('删除失败');
+            }
+        }
+        
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.style.display = 'block';
+            setTimeout(() => toast.style.display = 'none', 2000);
+        }
+    </script>
+</body>
+</html>

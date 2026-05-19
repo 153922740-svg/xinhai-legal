@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>个人中心 - 心海法律 AI</title>
+    <style>
+        :root{--bg-primary:#0a0e1a;--bg-secondary:#131825;--bg-card:#1a1f2e;--border:#1e2538;--text-primary:#e8eaed;--text-secondary:#94a3b8;--accent-primary:#6366f1;--accent-secondary:#8b5cf6;--success:#22c55e}
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg-primary);color:var(--text-primary);min-height:100vh;padding:20px}
+        .container{max-width:600px;margin:0 auto}
+        .header{display:flex;align-items:center;gap:15px;margin-bottom:30px}
+        .avatar{width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,var(--accent-primary),var(--accent-secondary));display:flex;align-items:center;justify-content:center;font-size:24px}
+        .user-info h1{font-size:20px;margin-bottom:4px}
+        .user-info p{color:var(--text-secondary);font-size:14px}
+        .card{background:var(--bg-card);border:1px solid var(--border);border-radius:16px;padding:20px;margin-bottom:20px}
+        .card h2{font-size:16px;margin-bottom:15px;color:var(--text-secondary)}
+        .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:15px;margin-bottom:20px}
+        .stat{text-align:center;padding:15px;background:var(--bg-secondary);border-radius:12px}
+        .stat .value{font-size:24px;font-weight:600;color:var(--accent-primary)}
+        .stat .label{font-size:12px;color:var(--text-secondary);margin-top:4px}
+        .menu-item{display:flex;align-items:center;justify-content:space-between;padding:15px 0;border-bottom:1px solid var(--border);cursor:pointer}
+        .menu-item:last-child{border-bottom:none}
+        .menu-item .left{display:flex;align-items:center;gap:12px}
+        .menu-item .icon{width:36px;height:36px;background:var(--bg-secondary);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px}
+        .menu-item .text{font-size:15px}
+        .menu-item .arrow{color:var(--text-secondary)}
+        .badge{background:var(--success);color:white;padding:2px 8px;border-radius:10px;font-size:12px}
+        .member-card{background:linear-gradient(135deg,var(--accent-primary),var(--accent-secondary));border-radius:12px;padding:20px;margin-bottom:20px}
+        .member-card .level{font-size:14px;opacity:0.9;margin-bottom:8px}
+        .member-card .expires{font-size:12px;opacity:0.8}
+        .btn{width:100%;padding:14px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:12px;color:var(--text-primary);font-size:15px;cursor:pointer;margin-top:10px}
+        .btn-primary{background:linear-gradient(135deg,var(--accent-primary),var(--accent-secondary));border:none}
+        .edit-modal{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);display:none;align-items:center;justify-content:center;z-index:1000}
+        .edit-modal .content{background:var(--bg-card);border-radius:16px;padding:30px;width:90%;max-width:400px}
+        .edit-modal h3{font-size:18px;margin-bottom:20px}
+        .edit-modal input{width:100%;padding:14px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:12px;color:var(--text-primary);font-size:16px;margin-bottom:20px}
+        .edit-modal .actions{display:flex;gap:10px}
+        .edit-modal .actions button{flex:1;padding:14px;border-radius:12px;font-size:15px;cursor:pointer;border:none}
+        .edit-modal .cancel{background:var(--bg-secondary);color:var(--text-primary)}
+        .edit-modal .confirm{background:linear-gradient(135deg,var(--accent-primary),var(--accent-secondary));color:white}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="avatar" id="avatarDisplay">👤</div>
+            <div class="user-info">
+                <h1 id="username">加载中...</h1>
+                <p id="userid">ID: ---</p>
+            </div>
+        </div>
+        
+        <!-- 会员状态 -->
+        <div class="member-card" id="memberCard" style="display:none">
+            <div class="level">👑 会员</div>
+            <div class="expires" id="memberExpires">有效期至：---</div>
+        </div>
+        
+        <!-- 资产统计 -->
+        <div class="card">
+            <h2>我的资产</h2>
+            <div class="stats">
+                <div class="stat">
+                    <div class="value" id="tokenBalance">0</div>
+                    <div class="label">Token</div>
+                </div>
+                <div class="stat">
+                    <div class="value" id="memberDays">0</div>
+                    <div class="label">会员天数</div>
+                </div>
+                <div class="stat">
+                    <div class="value" id="consultCount">0</div>
+                    <div class="label">咨询次数</div>
+                </div>
+            </div>
+            <button class="btn btn-primary" onclick="window.location.href='/recharge.html'">💰 充值 Token</button>
+        </div>
+        
+        <!-- 功能菜单 -->
+        <div class="card">
+            <h2>法律服务</h2>
+            <div class="menu-item" onclick="window.location.href='/chat.html'">
+                <div class="left">
+                    <div class="icon">💬</div>
+                    <span class="text">AI 法律咨询</span>
+                </div>
+                <span class="arrow">›</span>
+            </div>
+            <div class="menu-item" onclick="window.location.href='/document.html'">
+                <div class="left">
+                    <div class="icon">📄</div>
+                    <span class="text">文书生成</span>
+                </div>
+                <span class="arrow">›</span>
+            </div>
+            <div class="menu-item" onclick="showHistory()">
+                <div class="left">
+                    <div class="icon">📋</div>
+                    <span class="text">历史对话</span>
+                </div>
+                <span class="arrow">›</span>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>个人中心</h2>
+            <div class="menu-item" onclick="showEditModal()">
+                <div class="left">
+                    <div class="icon">✏️</div>
+                    <span class="text">编辑资料</span>
+                </div>
+                <span class="arrow">›</span>
+            </div>
+            <div class="menu-item" onclick="window.location.href='/partner.html'">
+                <div class="left">
+                    <div class="icon">🤝</div>
+                    <span class="text">合伙人中心</span>
+                </div>
+                <span class="badge">新</span>
+            </div>
+            <div class="menu-item" onclick="window.location.href='/dashboard.html'">
+                <div class="left">
+                    <div class="icon">📊</div>
+                    <span class="text">数据看板</span>
+                </div>
+                <span class="arrow">›</span>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>设置</h2>
+            <div class="menu-item" onclick="showHelp()">
+                <div class="left">
+                    <div class="icon">❓</div>
+                    <span class="text">使用帮助</span>
+                </div>
+                <span class="arrow">›</span>
+            </div>
+            <div class="menu-item" onclick="showAbout()">
+                <div class="left">
+                    <div class="icon">ℹ️</div>
+                    <span class="text">关于我们</span>
+                </div>
+                <span class="arrow">›</span>
+            </div>
+            <div class="menu-item" onclick="logout()" style="color:#ef4444">
+                <div class="left">
+                    <div class="icon">🚪</div>
+                    <span class="text">退出登录</span>
+                </div>
+                <span class="arrow">›</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 编辑资料弹窗 -->
+    <div class="edit-modal" id="editModal">
+        <div class="content">
+            <h3>编辑资料</h3>
+            <input type="text" id="editUsername" placeholder="昵称">
+            <div class="actions">
+                <button class="cancel" onclick="hideEditModal()">取消</button>
+                <button class="confirm" onclick="saveProfile()">保存</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let userId = null;
+        let userData = null;
+        
+        window.onload = function() {
+            loadUserProfile();
+        };
+        
+        async function loadUserProfile() {
+            userId = localStorage.getItem('user_id');
+            
+            if (!userId) {
+                window.location.href = '/login.html';
+                return;
+            }
+            
+            document.getElementById('userid').textContent = 'ID: ' + userId.substring(0, 8) + '...';
+            
+            try {
+                const r = await fetch(`/api/v1/user/profile?user_id=${userId}`);
+                const d = await r.json();
+                
+                if (d.code === 200) {
+                    userData = d.data;
+                    document.getElementById('username').textContent = userData.username || '用户';
+                    document.getElementById('tokenBalance').textContent = userData.token_balance || 0;
+                    
+                    if (userData.is_member) {
+                        document.getElementById('memberCard').style.display = 'block';
+                        const expiresDate = new Date(userData.member_expires);
+                        document.getElementById('memberExpires').textContent = '有效期至：' + expiresDate.toLocaleDateString();
+                        
+                        const days = Math.ceil((expiresDate - new Date()) / (1000*60*60*24));
+                        document.getElementById('memberDays').textContent = days;
+                    }
+                }
+            } catch(e) {
+                console.error(e);
+            }
+        }
+        
+        function showEditModal() {
+            document.getElementById('editUsername').value = userData?.username || '';
+            document.getElementById('editModal').style.display = 'flex';
+        }
+        
+        function hideEditModal() {
+            document.getElementById('editModal').style.display = 'none';
+        }
+        
+        async function saveProfile() {
+            const username = document.getElementById('editUsername').value.trim();
+            
+            if (!username) {
+                alert('请输入昵称');
+                return;
+            }
+            
+            try {
+                const r = await fetch('/api/v1/user/profile', {
+                    method: 'PUT',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({user_id: userId, username: username})
+                });
+                const d = await r.json();
+                
+                if (d.code === 200) {
+                    localStorage.setItem('username', username);
+                    document.getElementById('username').textContent = username;
+                    hideEditModal();
+                    alert('资料已更新');
+                } else {
+                    alert('更新失败：' + d.message);
+                }
+            } catch(e) {
+                alert('更新失败，请稍后重试');
+            }
+        }
+        
+        function showHistory() {
+            alert('历史对话功能开发中...');
+            // TODO: 跳转到历史对话页面
+        }
+        
+        function showHelp() {
+            alert('使用帮助页面开发中...');
+        }
+        
+        function showAbout() {
+            alert('关于我们页面开发中...');
+        }
+        
+        function logout() {
+            if (confirm('确定要退出登录吗？')) {
+                localStorage.removeItem('user_id');
+                localStorage.removeItem('user_token');
+                localStorage.removeItem('username');
+                window.location.href = '/login.html';
+            }
+        }
+    </script>
+</body>
+</html>

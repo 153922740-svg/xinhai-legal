@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>支付结果 - 心海法律 AI</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0a0e1a;
+            color: #e8eaed;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .result-card {
+            background: #1a1f2e;
+            border: 1px solid #1e2538;
+            border-radius: 16px;
+            padding: 40px 24px;
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+        }
+        .result-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+        .result-title {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        .result-desc {
+            font-size: 14px;
+            color: #94a3b8;
+            margin-bottom: 24px;
+        }
+        .order-info {
+            background: #131825;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 24px;
+            text-align: left;
+        }
+        .order-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            font-size: 13px;
+        }
+        .order-row:not(:last-child) {
+            border-bottom: 1px solid #1e2538;
+        }
+        .order-label { color: #94a3b8; }
+        .order-value { font-weight: 500; }
+        .amount {
+            font-size: 32px;
+            font-weight: 600;
+            color: #6366f1;
+            margin-bottom: 24px;
+        }
+        .action-btns {
+            display: flex;
+            gap: 12px;
+        }
+        .action-btn {
+            flex: 1;
+            padding: 14px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+        }
+        .btn-secondary {
+            background: #131825;
+            color: #e8eaed;
+        }
+        
+        /* 失败状态 */
+        .result-card.failed .result-icon { filter: hue-rotate(240deg); }
+        .result-card.failed .amount { color: #ef4444; }
+        
+        /* 处理中状态 */
+        .result-card.processing .result-icon { animation: pulse 1.5s infinite; }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+    </style>
+</head>
+<body>
+    <div class="result-card" id="resultCard">
+        <div class="result-icon" id="resultIcon">✅</div>
+        <div class="result-title" id="resultTitle">支付成功</div>
+        <div class="result-desc" id="resultDesc">感谢您的购买</div>
+        
+        <div class="amount" id="amount">¥30.00</div>
+        
+        <div class="order-info">
+            <div class="order-row">
+                <span class="order-label">订单号</span>
+                <span class="order-value" id="orderNo">ORD20260517001</span>
+            </div>
+            <div class="order-row">
+                <span class="order-label">商品</span>
+                <span class="order-value" id="product">心海法律 AI 月卡会员</span>
+            </div>
+            <div class="order-row">
+                <span class="order-label">支付方式</span>
+                <span class="order-value" id="payMethod">微信支付</span>
+            </div>
+            <div class="order-row">
+                <span class="order-label">支付时间</span>
+                <span class="order-value" id="payTime">2026-05-17 10:30</span>
+            </div>
+        </div>
+        
+        <div class="action-btns">
+            <button class="action-btn btn-secondary" onclick="goHome()">返回首页</button>
+            <button class="action-btn btn-primary" onclick="goDetail()">查看详情</button>
+        </div>
+    </div>
+
+    <script>
+        // 从 URL 参数获取支付结果
+        const params = new URLSearchParams(window.location.search);
+        const status = params.get('status') || 'success';
+        const orderNo = params.get('order_no') || 'ORD20260517001';
+        const amount = params.get('amount') || '30.00';
+        const product = params.get('product') || '心海法律 AI 月卡会员';
+        
+        function initPage() {
+            const card = document.getElementById('resultCard');
+            const icon = document.getElementById('resultIcon');
+            const title = document.getElementById('resultTitle');
+            const desc = document.getElementById('resultDesc');
+            
+            document.getElementById('orderNo').textContent = orderNo;
+            document.getElementById('amount').textContent = '¥' + amount;
+            document.getElementById('product').textContent = product;
+            
+            if (status === 'success') {
+                icon.textContent = '✅';
+                title.textContent = '支付成功';
+                desc.textContent = '感谢您的购买';
+            } else if (status === 'failed') {
+                card.classList.add('failed');
+                icon.textContent = '❌';
+                title.textContent = '支付失败';
+                desc.textContent = '请检查账户余额后重试';
+                document.querySelector('.btn-primary').textContent = '重新支付';
+                document.querySelector('.btn-primary').onclick = repay;
+            } else if (status === 'processing') {
+                card.classList.add('processing');
+                icon.textContent = '⏳';
+                title.textContent = '支付处理中';
+                desc.textContent = '请稍后查看支付结果';
+                setTimeout(checkStatus, 3000);
+            }
+        }
+        
+        function checkStatus() {
+            // TODO: 轮询支付状态
+            console.log('检查支付状态...');
+        }
+        
+        function repay() {
+            window.location.href = '/recharge.html?order=' + orderNo;
+        }
+        
+        function goHome() {
+            window.location.href = '/';
+        }
+        
+        function goDetail() {
+            window.location.href = '/order.html?id=' + orderNo;
+        }
+        
+        initPage();
+    </script>
+</body>
+</html>

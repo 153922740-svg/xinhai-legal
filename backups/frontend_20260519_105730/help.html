@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>使用帮助 - 心海法律 AI</title>
+    <style>
+        :root{--bg-primary:#0a0e1a;--bg-secondary:#131825;--bg-card:#1a1f2e;--border:#1e2538;--text-primary:#e8eaed;--text-secondary:#94a3b8;--accent-primary:#6366f1}
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg-primary);color:var(--text-primary);min-height:100vh;padding:20px}
+        .container{max-width:800px;margin:0 auto}
+        .header{margin-bottom:30px}
+        .header h1{font-size:24px;margin-bottom:10px}
+        .header p{color:var(--text-secondary)}
+        .card{background:var(--bg-card);border:1px solid var(--border);border-radius:16px;padding:20px;margin-bottom:20px}
+        .faq-category{margin-bottom:30px}
+        .faq-category h2{font-size:18px;margin-bottom:15px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+        .faq-item{margin-bottom:15px}
+        .faq-question{display:flex;justify-content:space-between;align-items:center;padding:15px;background:var(--bg-secondary);border-radius:8px;cursor:pointer}
+        .faq-question h3{font-size:15px;font-weight:500}
+        .faq-question .icon{font-size:18px;transition:transform 0.3s}
+        .faq-question.active .icon{transform:rotate(45deg)}
+        .faq-answer{display:none;padding:15px;color:var(--text-secondary);line-height:1.8;font-size:14px}
+        .faq-answer.show{display:block}
+        .contact{margin-top:30px;text-align:center}
+        .contact p{color:var(--text-secondary);margin-bottom:15px}
+        .contact-btn{display:inline-block;padding:12px 24px;background:var(--accent-primary);color:white;border-radius:8px;text-decoration:none}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>❓ 使用帮助</h1>
+            <p>常见问题解答</p>
+        </div>
+        
+        <div class="faq-category">
+            <h2>💬 咨询类</h2>
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    <h3>AI 法律咨询准确吗？</h3>
+                    <span class="icon">+</span>
+                </div>
+                <div class="faq-answer">
+                    心海法律 AI 采用三模型交叉验证技术（DeepSeek + Qwen + GLM），法律条文准确率可达 99.2%。但 AI 建议仅供参考，复杂案件建议咨询专业律师。
+                </div>
+            </div>
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    <h3>咨询如何收费？</h3>
+                    <span class="icon">+</span>
+                </div>
+                <div class="faq-answer">
+                    AI 咨询按 Token 消耗计费，根据问题复杂度和回答长度实时扣费。平均每次咨询消耗约 100-500 Token（约 0.02-0.1 元）。
+                </div>
+            </div>
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    <h3>可以上传文件分析吗？</h3>
+                    <span class="icon">+</span>
+                </div>
+                <div class="faq-answer">
+                    支持上传 PDF、Word、TXT 文件，AI 会自动提取文本内容并分析。也支持图片上传，通过 OCR 识别文字后分析。
+                </div>
+            </div>
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    <h3>对话记录会保存吗？</h3>
+                    <span class="icon">+</span>
+                </div>
+                <div class="faq-answer">
+                    是的，您的所有对话记录都会加密保存，可在"历史对话"中查看。除非您主动删除，否则永久保存。
+                </div>
+            </div>
+        </div>
+        
+        <div class="faq-category">
+            <h2>👑 会员类</h2>
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    <h3>会员有什么用？</h3>
+                    <span class="icon">+</span>
+                </div>
+                <div class="faq-answer">
+                    会员是功能使用权限，开通会员后可使用文书生成、合同审阅等核心功能。会员不含免费服务次数，使用 AI 服务仍需消耗 Token。
+                </div>
+            </div>
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    <h3>会员有哪些套餐？</h3>
+                    <span class="icon">+</span>
+                </div>
+                <div class="faq-answer">
+                    • 新人福利：注册送 3 天免费会员<br>
+                    • 连续包月：首月¥1，次月¥30/月<br>
+                    • 月卡：¥30/30 天<br>
+                    • 季卡：¥80/90 天<br>
+                    • 年卡：¥288/365 天
+                </div>
+            </div>
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    <h3>会员到期了怎么办？</h3>
+                    <span class="icon">+</span>
+                </div>
+                <div class="faq-answer">
+                    会员到期后，您将无法继续使用文书生成、合同审阅等会员功能。如需继续使用，可重新开通会员。
+                </div>
+            </div>
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    <h3>如何取消自动续费？</h3>
+                    <span class="icon">+</span>
+                </div>
+                <div class="faq-answer">
+                    在微信支付的自动续费管理中可随时取消。路径：微信 - 我 - 服务 - 钱包 - 支付设置 - 自动续费。
+                </div>
+            </div>
+        </div>
+        
+        <div class="faq-category">
+            <h2>📄 文书类</h2>
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    <h3>支持哪些文书类型？</h3>
+                    <span class="icon">+</span>
+                </div>
+                <div class="faq-answer">
+                    支持 9 种常用法律文书：民事起诉状、答辩状、律师函、租房合同、借款协议、离婚协议、劳动仲裁申请书、债权转让协议、和解协议。
+                </div>
+            </div>
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    <h3>生成的文书可以直接使用吗？</h3>
+                    <span class="icon">+</span>
+                </div>
+                <div class="faq-answer">
+                    AI 生成的文书可作为参考模板，建议根据实际情况修改完善。重要法律文书建议咨询专业律师审核后使用。
+                </div>
+            </div>
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    <h3>文书可以下载吗？</h3>
+                    <span class="icon">+</span>
+                </div>
+                <div class="faq-answer">
+                    支持下载 Word 和 PDF 两种格式，可在文书详情页点击"下载"按钮。
+                </div>
+            </div>
+        </div>
+        
+        <div class="faq-category">
+            <h2>🪙 Token 类</h2>
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    <h3>Token 是什么？</h3>
+                    <span class="icon">+</span>
+                </div>
+                <div class="faq-answer">
+                    Token 是平台虚拟服务计费单位，用于支付 AI 咨询、文书生成等服务的消耗。官方定价：2 元 = 10,000 Token。
+                </div>
+            </div>
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    <h3>Token 可以退款吗？</h3>
+                    <span class="icon">+</span>
+                </div>
+                <div class="faq-answer">
+                    Token 为虚拟服务计费单位，一经充值，不可提现、不可退款、不可转让。
+                </div>
+            </div>
+        </div>
+        
+        <div class="faq-category">
+            <h2>🤝 合伙人类</h2>
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    <h3>如何成为合伙人？</h3>
+                    <span class="icon">+</span>
+                </div>
+                <div class="faq-answer">
+                    所有用户注册后即可成为普通合伙人，生成专属推荐码。推荐好友注册、开通会员、充值 Token 均可获得佣金奖励。
+                </div>
+            </div>
+        </div>
+        
+        <div class="faq-category">
+            <h2>👤 账号类</h2>
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    <h3>如何更换手机号？</h3>
+                    <span class="icon">+</span>
+                </div>
+                <div class="faq-answer">
+                    在个人中心 - 编辑资料中可以修改绑定手机号。需要验证原手机号和新手机号。
+                </div>
+            </div>
+        </div>
+        
+        <div class="contact">
+            <p>没有找到答案？联系我们的客服团队</p>
+            <a href="#" class="contact-btn" onclick="showContact()">💬 联系在线客服</a>
+        </div>
+    </div>
+    
+    <script>
+        function toggleFaq(element) {
+            element.classList.toggle('active');
+            const answer = element.nextElementSibling;
+            answer.classList.toggle('show');
+        }
+        
+        function showContact() {
+            alert('在线客服功能开发中...\n\n您也可以通过以下方式联系我们：\n• 企业微信：xinclaw_service\n• 邮箱：support@xinclaw.com');
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,3078 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>数字员工管理后台 - 心海法律AI</title>
+    <style>
+        /* ==================== 全局样式 ==================== */
+        :root {
+            --bg-primary: #0a0e1a;
+            --bg-secondary: #131825;
+            --bg-tertiary: #1e2438;
+            --border: #2a3148;
+            --accent-primary: #6366f1;
+            --accent-secondary: #8b5cf6;
+            --accent-hover: #818cf8;
+            --text-primary: #e8eaed;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --status-online: #22c55e;
+            --status-busy: #f59e0b;
+            --status-offline: #6b7280;
+            --status-error: #ef4444;
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 24px;
+            --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.3);
+            --shadow-hover: 0 12px 40px rgba(99, 102, 241, 0.2);
+            --font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.5;
+        }
+
+        /* ==================== 登录页 ==================== */
+        .login-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-tertiary) 50%, var(--bg-primary) 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .login-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at 30% 20%, rgba(99, 102, 241, 0.15) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        .login-card {
+            width: 100%;
+            max-width: 400px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-xl);
+            padding: 40px;
+            box-shadow: var(--shadow-card);
+            position: relative;
+            z-index: 1;
+            margin: 20px;
+        }
+
+        .login-logo {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .login-logo .icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+        }
+
+        .login-logo h1 {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .login-logo p {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 12px;
+        }
+
+        .input-row .form-input {
+            flex: 1;
+        }
+
+        .form-input {
+            width: 100%;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 14px 16px;
+            font-size: 16px;
+            color: var(--text-primary);
+            transition: all 0.3s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+        }
+
+        .form-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .country-code {
+            width: 80px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-right: none;
+            border-radius: var(--radius-md) 0 0 var(--radius-md);
+            padding: 14px 12px;
+            font-size: 16px;
+            color: var(--text-primary);
+            text-align: center;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 12px 20px;
+            border-radius: var(--radius-md);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, var(--accent-hover), var(--accent-primary));
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--accent-primary);
+            background: rgba(99, 102, 241, 0.1);
+        }
+
+        .btn-block {
+            width: 100%;
+        }
+
+        .send-code-btn {
+            white-space: nowrap;
+            min-width: 120px;
+        }
+
+        .send-code-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        /* ==================== 主应用布局 ==================== */
+        .app-container {
+            display: none;
+            min-height: 100vh;
+        }
+
+        .app-container.active {
+            display: flex;
+        }
+
+        /* 侧边栏 */
+        .sidebar {
+            width: 260px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border);
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            z-index: 100;
+            transition: transform 0.3s;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .sidebar-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .sidebar-logo .icon {
+            font-size: 32px;
+        }
+
+        .sidebar-logo h2 {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .sidebar-logo span {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .nav-section {
+            padding: 16px 0;
+        }
+
+        .nav-section-title {
+            padding: 8px 20px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            letter-spacing: 0.5px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 20px;
+            font-size: 14px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+            border-left: 3px solid transparent;
+        }
+
+        .nav-item:hover {
+            background: rgba(99, 102, 241, 0.08);
+            color: var(--text-primary);
+        }
+
+        .nav-item.active {
+            background: rgba(99, 102, 241, 0.15);
+            color: var(--accent-primary);
+            border-left-color: var(--accent-primary);
+        }
+
+        .nav-item .icon {
+            font-size: 18px;
+        }
+
+        /* 头部 */
+        .header {
+            height: 64px;
+            background: var(--bg-primary);
+            border-bottom: 1px solid var(--border);
+            position: fixed;
+            top: 0;
+            left: 260px;
+            right: 0;
+            z-index: 99;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .breadcrumb {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .breadcrumb span {
+            color: var(--text-primary);
+        }
+
+        .menu-toggle {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--text-primary);
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .search-box {
+            position: relative;
+            width: 280px;
+        }
+
+        .search-box input {
+            width: 100%;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 10px 16px;
+            padding-left: 40px;
+            font-size: 14px;
+            color: var(--text-primary);
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+        }
+
+        .search-box::before {
+            content: '🔍';
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 14px;
+        }
+
+        .header-icon-btn {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            position: relative;
+            transition: all 0.2s;
+        }
+
+        .header-icon-btn:hover {
+            border-color: var(--accent-primary);
+        }
+
+        .header-icon-btn .badge {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            min-width: 18px;
+            height: 18px;
+            background: var(--status-error);
+            border-radius: 9px;
+            font-size: 11px;
+            font-weight: 600;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .user-menu {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+        }
+
+        .user-menu:hover {
+            border-color: var(--accent-primary);
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+
+        .user-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .user-info .name {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .user-info .role {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        /* 主内容区 */
+        .main-content {
+            margin-left: 260px;
+            margin-top: 64px;
+            padding: 24px;
+            min-height: calc(100vh - 64px);
+        }
+
+        /* ==================== 页面视图 ==================== */
+        .page-view {
+            display: none;
+        }
+
+        .page-view.active {
+            display: block;
+        }
+
+        /* 工作台 */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            transition: all 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .stat-card .icon {
+            font-size: 32px;
+            margin-bottom: 16px;
+        }
+
+        .stat-card .label {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .stat-card .value {
+            font-size: 32px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .stat-card .trend {
+            font-size: 12px;
+            color: var(--status-online);
+        }
+
+        .stat-card .trend.negative {
+            color: var(--status-error);
+        }
+
+        /* 数字员工团队 */
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .section-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .filter-select {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 10px 16px;
+            font-size: 14px;
+            color: var(--text-primary);
+            cursor: pointer;
+        }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+        }
+
+        /* Agent团队分组 */
+        .team-group {
+            margin-bottom: 32px;
+        }
+
+        .team-group-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .team-group-header .team-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .team-group-header .team-count {
+            font-size: 12px;
+            color: var(--text-muted);
+            background: var(--bg-tertiary);
+            padding: 4px 8px;
+            border-radius: 12px;
+        }
+
+        .team-group-header .team-indicator {
+            width: 4px;
+            height: 20px;
+            border-radius: 2px;
+        }
+
+        .tech-indicator {
+            background: var(--accent-primary);
+        }
+
+        .ops-indicator {
+            background: var(--accent-secondary);
+        }
+
+        /* Agent卡片网格 */
+        .agent-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 16px;
+        }
+
+        .agent-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .agent-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--accent-primary);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .agent-card.status-online {
+            border-color: rgba(34, 197, 94, 0.3);
+        }
+
+        .agent-card.status-online:hover {
+            box-shadow: 0 12px 40px rgba(34, 197, 94, 0.2);
+        }
+
+        .agent-card.status-busy {
+            border-color: rgba(245, 158, 11, 0.3);
+        }
+
+        .agent-card.status-busy:hover {
+            box-shadow: 0 12px 40px rgba(245, 158, 11, 0.2);
+        }
+
+        .agent-card.status-offline {
+            opacity: 0.7;
+        }
+
+        .agent-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .agent-avatar {
+            width: 48px;
+            height: 48px;
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            position: relative;
+        }
+
+        .agent-status-dot {
+            position: absolute;
+            bottom: -2px;
+            right: -2px;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            border: 2px solid var(--bg-secondary);
+        }
+
+        .status-dot-online {
+            background: var(--status-online);
+        }
+
+        .status-dot-busy {
+            background: var(--status-busy);
+        }
+
+        .status-dot-offline {
+            background: var(--status-offline);
+        }
+
+        .agent-basic-info {
+            flex: 1;
+        }
+
+        .agent-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .agent-role {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .agent-skills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 12px;
+        }
+
+        .skill-tag {
+            font-size: 11px;
+            padding: 4px 8px;
+            background: rgba(99, 102, 241, 0.1);
+            color: var(--accent-primary);
+            border-radius: 12px;
+        }
+
+        .agent-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-top: 12px;
+            border-top: 1px solid var(--border);
+        }
+
+        .task-count {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .agent-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .agent-action-btn {
+            padding: 6px 12px;
+            font-size: 12px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .agent-action-btn:hover {
+            border-color: var(--accent-primary);
+            color: var(--accent-primary);
+        }
+
+        /* 任务面板 */
+        .task-panel {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            margin-bottom: 24px;
+        }
+
+        .task-panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .task-tabs {
+            display: flex;
+            gap: 4px;
+        }
+
+        .task-tab {
+            padding: 8px 16px;
+            font-size: 14px;
+            color: var(--text-secondary);
+            background: none;
+            border: none;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .task-tab:hover {
+            background: rgba(99, 102, 241, 0.1);
+        }
+
+        .task-tab.active {
+            background: var(--accent-primary);
+            color: #fff;
+        }
+
+        .task-table {
+            width: 100%;
+        }
+
+        .task-table th,
+        .task-table td {
+            padding: 16px 20px;
+            text-align: left;
+        }
+
+        .task-table th {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            background: var(--bg-tertiary);
+        }
+
+        .task-table tr {
+            border-bottom: 1px solid var(--border);
+        }
+
+        .task-table tr:last-child {
+            border-bottom: none;
+        }
+
+        .task-table tr:hover {
+            background: rgba(99, 102, 241, 0.05);
+        }
+
+        .task-name {
+            font-size: 14px;
+            color: var(--text-primary);
+        }
+
+        .task-assignee {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 10px;
+            font-size: 12px;
+            font-weight: 500;
+            border-radius: 12px;
+        }
+
+        .status-badge.pending {
+            background: rgba(99, 102, 241, 0.1);
+            color: var(--accent-primary);
+        }
+
+        .status-badge.progress {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--status-busy);
+        }
+
+        .status-badge.completed {
+            background: rgba(34, 197, 94, 0.1);
+            color: var(--status-online);
+        }
+
+        .progress-bar {
+            width: 100px;
+            height: 6px;
+            background: var(--bg-tertiary);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: var(--accent-primary);
+            border-radius: 3px;
+            transition: width 0.3s;
+        }
+
+        .deadline {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .task-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .task-action-btn {
+            padding: 6px 12px;
+            font-size: 12px;
+            background: none;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .task-action-btn:hover {
+            border-color: var(--accent-primary);
+            color: var(--accent-primary);
+        }
+
+        /* COO对话面板 */
+        .coo-panel {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(139, 92, 246, 0.05));
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .coo-panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .coo-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .coo-title h3 {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .coo-desc {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        .coo-features {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .coo-feature {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px;
+            background: var(--bg-secondary);
+            border-radius: var(--radius-md);
+        }
+
+        .coo-feature .icon {
+            font-size: 24px;
+        }
+
+        .coo-feature .title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .coo-feature .desc {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .coo-ctas {
+            display: flex;
+            gap: 12px;
+        }
+
+        /* 权限管理面板 */
+        .permissions-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        .permission-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+        }
+
+        .permission-card .role-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .permission-card .role-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .permission-card .role-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .permission-card .role-level {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .permission-card .permissions-list {
+            margin-bottom: 16px;
+        }
+
+        .permission-card .permission-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 0;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .permission-card .permission-item::before {
+            content: '✓';
+            color: var(--status-online);
+            font-weight: 600;
+        }
+
+        .permission-card .users-list {
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .permission-card .users-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+
+        .permission-card .user-tag {
+            display: inline-block;
+            padding: 4px 10px;
+            background: var(--bg-tertiary);
+            border-radius: 12px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-right: 6px;
+            margin-bottom: 6px;
+        }
+
+        /* ==================== 模态框 ==================== */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-xl);
+            width: 100%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .modal-header h3 {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .modal-close {
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-tertiary);
+            border: none;
+            border-radius: var(--radius-sm);
+            font-size: 20px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+        }
+
+        .modal-close:hover {
+            background: var(--status-error);
+            color: #fff;
+        }
+
+        .modal-body {
+            padding: 24px;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            padding: 20px 24px;
+            border-top: 1px solid var(--border);
+        }
+
+        /* Agent详情模态框 */
+        .agent-detail-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .agent-detail-avatar {
+            width: 64px;
+            height: 64px;
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-lg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            position: relative;
+        }
+
+        .agent-detail-basic {
+            flex: 1;
+        }
+
+        .agent-detail-name {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .agent-detail-role {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .agent-detail-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            padding: 4px 10px;
+            border-radius: 12px;
+        }
+
+        .agent-detail-status.online {
+            background: rgba(34, 197, 94, 0.1);
+            color: var(--status-online);
+        }
+
+        .agent-detail-status.busy {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--status-busy);
+        }
+
+        .agent-detail-status.offline {
+            background: rgba(107, 114, 128, 0.1);
+            color: var(--status-offline);
+        }
+
+        .detail-section {
+            margin-bottom: 24px;
+        }
+
+        .detail-section-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .detail-section-content {
+            font-size: 14px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        .detail-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .prompt-editor {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 13px;
+            color: var(--text-primary);
+            line-height: 1.6;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .prompt-version {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 12px;
+            padding: 12px;
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-sm);
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        /* 派发任务模态框 */
+        .task-form .form-group {
+            margin-bottom: 16px;
+        }
+
+        .task-form textarea {
+            width: 100%;
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .task-form .radio-group {
+            display: flex;
+            gap: 12px;
+        }
+
+        .task-form .radio-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+        }
+
+        .task-form .radio-item input {
+            width: 16px;
+            height: 16px;
+            accent-color: var(--accent-primary);
+        }
+
+        /* COO对话模态框 */
+        .coo-chat-container {
+            display: flex;
+            flex-direction: column;
+            height: 500px;
+        }
+
+        .coo-chat-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px;
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-md);
+            margin-bottom: 16px;
+        }
+
+        .coo-chat-avatar {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .coo-chat-info h4 {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .coo-chat-info span {
+            font-size: 12px;
+            color: var(--status-online);
+        }
+
+        .coo-chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-md);
+            margin-bottom: 16px;
+        }
+
+        .chat-message {
+            margin-bottom: 16px;
+        }
+
+        .chat-message.user {
+            text-align: right;
+        }
+
+        .chat-message-content {
+            display: inline-block;
+            max-width: 80%;
+            padding: 12px 16px;
+            border-radius: var(--radius-md);
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .chat-message.user .chat-message-content {
+            background: var(--accent-primary);
+            color: #fff;
+            border-bottom-right-radius: 4px;
+        }
+
+        .chat-message.coo .chat-message-content {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border-bottom-left-radius: 4px;
+            text-align: left;
+        }
+
+        .coo-chat-input {
+            display: flex;
+            gap: 12px;
+        }
+
+        .coo-chat-input input {
+            flex: 1;
+        }
+
+        .coo-thinking {
+            display: none;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 16px;
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-md);
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .coo-thinking.active {
+            display: flex;
+        }
+
+        .thinking-dots {
+            display: flex;
+            gap: 4px;
+        }
+
+        .thinking-dots span {
+            width: 6px;
+            height: 6px;
+            background: var(--accent-primary);
+            border-radius: 50%;
+            animation: thinking 1.4s infinite;
+        }
+
+        .thinking-dots span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .thinking-dots span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes thinking {
+            0%, 80%, 100% {
+                transform: scale(0.6);
+                opacity: 0.4;
+            }
+            40% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        /* ==================== 响应式设计 ==================== */
+        @media (max-width: 1200px) {
+            .stats-grid {
+                grid-template-columns: repeat(3, 1fr) !important;
+            }
+
+            .permissions-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .coo-features {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            /* 双栏布局变为单栏 */
+            .main-content > #dashboardPage > div[style*="grid-template-columns: 1fr 1fr"] {
+                grid-template-columns: 1fr !important;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .header {
+                left: 0;
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+
+            .menu-toggle {
+                display: block;
+            }
+
+            .search-box {
+                display: none;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .permissions-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .coo-features {
+                grid-template-columns: 1fr;
+            }
+
+            .agent-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .section-actions {
+                flex-wrap: wrap;
+            }
+
+            .task-table {
+                display: block;
+                overflow-x: auto;
+            }
+
+            .modal {
+                max-width: 100%;
+                margin: 0;
+                border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+                max-height: 90vh;
+            }
+
+            .modal-overlay {
+                align-items: flex-end;
+            }
+
+            .coo-chat-container {
+                height: 60vh;
+            }
+        }
+
+        /* ==================== 动画 ==================== */
+        .fade-in {
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .slide-up {
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Toast提示 */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 12px 24px;
+            font-size: 14px;
+            color: var(--text-primary);
+            z-index: 2000;
+            opacity: 0;
+            transition: all 0.3s;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        .toast.success {
+            border-color: var(--status-online);
+        }
+
+        .toast.error {
+            border-color: var(--status-error);
+        }
+    </style>
+</head>
+<body>
+    <!-- 登录页 -->
+    <div id="loginPage" class="login-container">
+        <div class="login-card fade-in">
+            <div class="login-logo">
+                <div class="icon">🤖</div>
+                <h1>数字员工管理后台</h1>
+                <p>管理您的AI智能团队</p>
+            </div>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label>手机号</label>
+                    <div class="input-row">
+                        <span class="country-code">+86</span>
+                        <input type="tel" class="form-input" id="phoneInput" placeholder="请输入手机号" maxlength="11">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>验证码</label>
+                    <div class="input-row">
+                        <input type="text" class="form-input" id="verifyCodeInput" placeholder="请输入验证码" maxlength="6">
+                        <button type="button" class="btn btn-secondary send-code-btn" id="sendCodeBtn">获取验证码</button>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">进入管理后台</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- 主应用 -->
+    <div id="appContainer" class="app-container">
+        <!-- 侧边栏 -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">
+                    <span class="icon">🤖</span>
+                    <div>
+                        <h2>数字员工</h2>
+                        <span>管理后台</span>
+                    </div>
+                </div>
+            </div>
+            <nav class="nav-section">
+                <div class="nav-section-title">概览</div>
+                <div class="nav-item active" data-page="dashboard">
+                    <span class="icon">📊</span>
+                    <span>工作台</span>
+                </div>
+                <div class="nav-item" data-page="statistics">
+                    <span class="icon">📈</span>
+                    <span>数据统计</span>
+                </div>
+            </nav>
+            <nav class="nav-section">
+                <div class="nav-section-title">团队管理</div>
+                <div class="nav-item" data-page="agents">
+                    <span class="icon">👥</span>
+                    <span>数字员工</span>
+                </div>
+                <div class="nav-item" data-page="tasks">
+                    <span class="icon">📋</span>
+                    <span>任务管理</span>
+                </div>
+                <div class="nav-item" data-page="coo">
+                    <span class="icon">💬</span>
+                    <span>COO对话</span>
+                </div>
+            </nav>
+            <nav class="nav-section">
+                <div class="nav-section-title">系统</div>
+                <div class="nav-item" data-page="permissions">
+                    <span class="icon">🔐</span>
+                    <span>权限管理</span>
+                </div>
+                <div class="nav-item" data-page="settings">
+                    <span class="icon">⚙️</span>
+                    <span>系统设置</span>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- 头部 -->
+        <header class="header">
+            <div class="header-left">
+                <button class="menu-toggle" id="menuToggle">☰</button>
+                <div class="breadcrumb">
+                    首页 / <span id="currentPageTitle">工作台</span>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="search-box">
+                    <input type="text" placeholder="搜索数字员工..." id="searchInput">
+                </div>
+                <div class="header-icon-btn">
+                    🔔
+                    <span class="badge">3</span>
+                </div>
+                <div class="user-menu" id="userMenu">
+                    <div class="user-avatar">👤</div>
+                    <div class="user-info">
+                        <span class="name">管理员</span>
+                        <span class="role">超级管理员</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- 主内容区 -->
+        <main class="main-content">
+            <!-- 工作台页面 -->
+            <div id="dashboardPage" class="page-view active">
+                <!-- 核心业务数据卡片 -->
+                <div class="stats-grid fade-in" style="grid-template-columns: repeat(5, 1fr);">
+                    <div class="stat-card">
+                        <div class="icon">👥</div>
+                        <div class="label">总用户数</div>
+                        <div class="value" id="statTotalUsers">-</div>
+                        <div class="trend" id="statUsersTrend">加载中...</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="icon">💎</div>
+                        <div class="label">会员用户</div>
+                        <div class="value" id="statVipUsers">-</div>
+                        <div class="trend" id="statVipTrend">加载中...</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="icon">📦</div>
+                        <div class="label">总订单数</div>
+                        <div class="value" id="statTotalOrders">-</div>
+                        <div class="trend" id="statOrdersTrend">加载中...</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="icon">💰</div>
+                        <div class="label">总收入</div>
+                        <div class="value" id="statTotalRevenue">-</div>
+                        <div class="trend" id="statRevenueTrend">加载中...</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="icon">📈</div>
+                        <div class="label">转化率</div>
+                        <div class="value" id="statConversionRate">-</div>
+                        <div class="trend" id="statConversionTrend">加载中...</div>
+                    </div>
+                </div>
+
+                <!-- COO 对话 + 团队状态 双栏布局 -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
+                    <!-- COO 智能对话面板（直接嵌入首页） -->
+                    <div class="coo-panel slide-up" style="margin-bottom: 0;">
+                        <div class="coo-panel-header">
+                            <div>
+                                <h3>💬 COO 智能对话</h3>
+                                <p class="coo-desc">直接下达指令，COO 会分析并分配给合适的数字员工</p>
+                            </div>
+                        </div>
+                        <div class="coo-chat-container" style="height: 400px;">
+                            <div class="coo-chat-header">
+                                <div class="coo-chat-avatar">👔</div>
+                                <div class="coo-chat-info">
+                                    <h4>COO 智能助手</h4>
+                                    <span>🟢 在线</span>
+                                </div>
+                            </div>
+                            <div class="coo-chat-messages" id="dashboardCooMessages">
+                                <div class="chat-message coo">
+                                    <div class="chat-message-content">总裁您好！我是 COO 智能助手。请随时下达指令，我会分析需求并分配给最合适的数字员工执行。</div>
+                                </div>
+                            </div>
+                            <div class="coo-thinking" id="dashboardCooThinking">
+                                <div class="thinking-dots">
+                                    <span></span>
+                                    <span></span>
+                                    <span></span>
+                                </div>
+                                <span>COO 思考中...</span>
+                            </div>
+                            <div class="coo-chat-input">
+                                <input type="text" class="form-input" id="dashboardCooInput" placeholder="输入您的指令..." onkeypress="handleDashboardCooInput(event)">
+                                <button class="btn btn-primary" onclick="sendDashboardCooMessage()">发送</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 团队状态概览 -->
+                    <div class="task-panel slide-up" style="margin-bottom: 0;">
+                        <div class="task-panel-header">
+                            <h3 class="section-title">🤖 团队状态</h3>
+                            <button class="btn btn-secondary" onclick="showPage('agents')">查看全部</button>
+                        </div>
+                        <div style="padding: 20px;">
+                            <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 20px;">
+                                <div class="stat-card" style="padding: 16px;">
+                                    <div class="label">在线</div>
+                                    <div class="value" style="font-size: 24px; color: var(--status-online);" id="onlineCount">12</div>
+                                </div>
+                                <div class="stat-card" style="padding: 16px;">
+                                    <div class="label">忙碌</div>
+                                    <div class="value" style="font-size: 24px; color: var(--status-busy);" id="busyCount">3</div>
+                                </div>
+                                <div class="stat-card" style="padding: 16px;">
+                                    <div class="label">离线</div>
+                                    <div class="value" style="font-size: 24px; color: var(--status-offline);" id="offlineCount">1</div>
+                                </div>
+                            </div>
+                            <div style="max-height: 200px; overflow-y: auto;">
+                                <div id="quickAgentList">
+                                    <!-- 由 JS 动态生成 -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 数字员工团队 -->
+                <div class="section-header">
+                    <h2 class="section-title">数字员工团队</h2>
+                    <div class="section-actions">
+                        <select class="filter-select" id="teamFilter" onchange="filterAgents()">
+                            <option value="all">全部团队</option>
+                            <option value="tech">技术组</option>
+                            <option value="ops">运营组</option>
+                        </select>
+                        <select class="filter-select" id="statusFilter" onchange="filterAgents()">
+                            <option value="all">全部状态</option>
+                            <option value="online">在线</option>
+                            <option value="busy">忙碌</option>
+                            <option value="offline">离线</option>
+                        </select>
+                        <button class="btn btn-primary" onclick="openTaskModal()">➕ 下达任务</button>
+                    </div>
+                </div>
+
+                <!-- 技术组 -->
+                <div class="team-group" id="techGroup">
+                    <div class="team-group-header">
+                        <div class="team-indicator tech-indicator"></div>
+                        <span class="team-name">技术组</span>
+                        <span class="team-count">9人</span>
+                    </div>
+                    <div class="agent-grid" id="techAgentGrid">
+                        <!-- 由JS动态生成 -->
+                    </div>
+                </div>
+
+                <!-- 运营组 -->
+                <div class="team-group" id="opsGroup">
+                    <div class="team-group-header">
+                        <div class="team-indicator ops-indicator"></div>
+                        <span class="team-name">运营组</span>
+                        <span class="team-count">7人</span>
+                    </div>
+                    <div class="agent-grid" id="opsAgentGrid">
+                        <!-- 由JS动态生成 -->
+                    </div>
+                </div>
+
+                <!-- 任务管理面板 -->
+                <div class="task-panel slide-up" style="margin-top: 32px;">
+                    <div class="task-panel-header">
+                        <h3 class="section-title">任务管理</h3>
+                        <div class="task-tabs">
+                            <button class="task-tab active" data-tab="all">全部任务</button>
+                            <button class="task-tab" data-tab="pending">待执行</button>
+                            <button class="task-tab" data-tab="progress">进行中</button>
+                            <button class="task-tab" data-tab="completed">已完成</button>
+                        </div>
+                    </div>
+                    <table class="task-table">
+                        <thead>
+                            <tr>
+                                <th>任务名称</th>
+                                <th>负责人</th>
+                                <th>状态</th>
+                                <th>进度</th>
+                                <th>截止时间</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="taskTableBody">
+                            <!-- 由JS动态生成 -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 数字员工页面 -->
+            <div id="agentsPage" class="page-view">
+                <div class="section-header">
+                    <h2 class="section-title">数字员工</h2>
+                    <div class="section-actions">
+                        <select class="filter-select" id="agentsTeamFilter" onchange="filterAgents()">
+                            <option value="all">全部团队</option>
+                            <option value="tech">技术组</option>
+                            <option value="ops">运营组</option>
+                        </select>
+                        <select class="filter-select" id="agentsStatusFilter" onchange="filterAgents()">
+                            <option value="all">全部状态</option>
+                            <option value="online">在线</option>
+                            <option value="busy">忙碌</option>
+                            <option value="offline">离线</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="agentsPageContent">
+                    <!-- 由JS动态生成 -->
+                </div>
+            </div>
+
+            <!-- 任务管理页面 -->
+            <div id="tasksPage" class="page-view">
+                <div class="section-header">
+                    <h2 class="section-title">任务管理</h2>
+                    <div class="section-actions">
+                        <button class="btn btn-primary" onclick="openTaskModal()">➕ 下达任务</button>
+                    </div>
+                </div>
+                <div class="task-panel">
+                    <div class="task-panel-header">
+                        <div class="task-tabs">
+                            <button class="task-tab active" data-tab="all">全部任务</button>
+                            <button class="task-tab" data-tab="pending">待执行</button>
+                            <button class="task-tab" data-tab="progress">进行中</button>
+                            <button class="task-tab" data-tab="completed">已完成</button>
+                        </div>
+                    </div>
+                    <table class="task-table">
+                        <thead>
+                            <tr>
+                                <th>任务名称</th>
+                                <th>负责人</th>
+                                <th>状态</th>
+                                <th>进度</th>
+                                <th>截止时间</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tasksPageTableBody">
+                            <!-- 由JS动态生成 -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- COO对话页面 -->
+            <div id="cooPage" class="page-view">
+                <div class="coo-panel">
+                    <div class="coo-panel-header">
+                        <div>
+                            <h3>💬 COO智能对话</h3>
+                            <p class="coo-desc">描述您的任务需求，COO会分析并给出建议，确认后自动分配执行者</p>
+                        </div>
+                    </div>
+                    <div class="coo-features" style="margin-bottom: 24px;">
+                        <div class="coo-feature">
+                            <span class="icon">1️⃣</span>
+                            <div>
+                                <div class="title">需求讨论</div>
+                                <div class="desc">描述您的任务需求，COO会分析并给出建议</div>
+                            </div>
+                        </div>
+                        <div class="coo-feature">
+                            <span class="icon">2️⃣</span>
+                            <div>
+                                <div class="title">方案确认</div>
+                                <div class="desc">COO提供执行方案，等待您确认</div>
+                            </div>
+                        </div>
+                        <div class="coo-feature">
+                            <span class="icon">3️⃣</span>
+                            <div>
+                                <div class="title">智能分配</div>
+                                <div class="desc">确认后COO自动分配给最合适的数字员工</div>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary btn-block" onclick="openCooChat()">💬 开始与COO讨论</button>
+                </div>
+            </div>
+
+            <!-- 权限管理页面 -->
+            <div id="permissionsPage" class="page-view">
+                <div class="section-header">
+                    <h2 class="section-title">权限管理</h2>
+                </div>
+                <div class="permissions-grid">
+                    <div class="permission-card">
+                        <div class="role-header">
+                            <div class="role-avatar" style="background: linear-gradient(135deg, #ef4444, #dc2626);">👑</div>
+                            <div>
+                                <div class="role-name">管理员</div>
+                                <div class="role-level">等级 3 - 最高权限</div>
+                            </div>
+                        </div>
+                        <div class="permissions-list">
+                            <div class="permission-item">全部权限</div>
+                        </div>
+                        <div class="users-list">
+                            <div class="users-label">当前用户</div>
+                            <span class="user-tag">管理员</span>
+                        </div>
+                    </div>
+                    <div class="permission-card">
+                        <div class="role-header">
+                            <div class="role-avatar" style="background: linear-gradient(135deg, #6366f1, #4f46e5);">👔</div>
+                            <div>
+                                <div class="role-name">COO运营官</div>
+                                <div class="role-level">等级 2 - 运营权限</div>
+                            </div>
+                        </div>
+                        <div class="permissions-list">
+                            <div class="permission-item">任务分配</div>
+                            <div class="permission-item">查看团队</div>
+                            <div class="permission-item">数据统计</div>
+                        </div>
+                        <div class="users-list">
+                            <div class="users-label">关联角色</div>
+                            <span class="user-tag">COO</span>
+                        </div>
+                    </div>
+                    <div class="permission-card">
+                        <div class="role-header">
+                            <div class="role-avatar" style="background: linear-gradient(135deg, #64748b, #475569);">👁️</div>
+                            <div>
+                                <div class="role-name">观察者</div>
+                                <div class="role-level">等级 1 - 只读权限</div>
+                            </div>
+                        </div>
+                        <div class="permissions-list">
+                            <div class="permission-item">查看数据</div>
+                            <div class="permission-item">查看任务</div>
+                        </div>
+                        <div class="users-list">
+                            <div class="users-label">关联角色</div>
+                            <span class="user-tag">访客</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 数据统计页面 -->
+            <div id="statisticsPage" class="page-view">
+                <div class="section-header">
+                    <h2 class="section-title">数据统计</h2>
+                </div>
+                <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr);">
+                    <div class="stat-card">
+                        <div class="icon">📊</div>
+                        <div class="label">本周完成任务</div>
+                        <div class="value">23</div>
+                        <div class="trend">+5 vs 上周</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="icon">⏱️</div>
+                        <div class="label">平均任务时长</div>
+                        <div class="value">2.5h</div>
+                        <div class="trend">-0.3h vs 上周</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="icon">✅</div>
+                        <div class="label">任务完成率</div>
+                        <div class="value">94%</div>
+                        <div class="trend">+2% vs 上周</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 系统设置页面 -->
+            <div id="settingsPage" class="page-view">
+                <div class="section-header">
+                    <h2 class="section-title">系统设置</h2>
+                </div>
+                <div class="task-panel">
+                    <div class="task-panel-header">
+                        <h3>基本设置</h3>
+                    </div>
+                    <div style="padding: 20px;">
+                        <div class="form-group">
+                            <label>管理员手机号</label>
+                            <input type="tel" class="form-input" value="15101675653" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>通知邮箱</label>
+                            <input type="email" class="form-input" placeholder="请输入通知邮箱">
+                        </div>
+                        <button class="btn btn-primary" onclick="showToast('设置已保存', 'success')">保存设置</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Agent详情模态框 -->
+    <div class="modal-overlay" id="agentDetailModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="agentDetailTitle">Agent详情</h3>
+                <button class="modal-close" onclick="closeModal('agentDetailModal')">×</button>
+            </div>
+            <div class="modal-body" id="agentDetailBody">
+                <!-- 由JS动态生成 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 派发任务模态框 -->
+    <div class="modal-overlay" id="taskModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>派发新任务</h3>
+                <button class="modal-close" onclick="closeModal('taskModal')">×</button>
+            </div>
+            <div class="modal-body">
+                <form class="task-form" id="taskForm">
+                    <div class="form-group">
+                        <label>任务名称</label>
+                        <input type="text" class="form-input" id="taskName" placeholder="请输入任务名称" required>
+                    </div>
+                    <div class="form-group">
+                        <label>任务描述</label>
+                        <textarea class="form-input" id="taskDesc" placeholder="请详细描述任务内容"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>指定员工</label>
+                        <select class="form-input" id="taskAssignee">
+                            <option value="">自动分配</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>指定团队</label>
+                        <select class="form-input" id="taskTeam">
+                            <option value="auto">自动分配</option>
+                            <option value="tech">技术组</option>
+                            <option value="ops">运营组</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>截止时间</label>
+                        <input type="date" class="form-input" id="taskDeadline">
+                    </div>
+                    <div class="form-group">
+                        <label>优先级</label>
+                        <div class="radio-group">
+                            <label class="radio-item">
+                                <input type="radio" name="priority" value="normal" checked>
+                                <span>普通</span>
+                            </label>
+                            <label class="radio-item">
+                                <input type="radio" name="priority" value="urgent">
+                                <span>紧急</span>
+                            </label>
+                            <label class="radio-item">
+                                <input type="radio" name="priority" value="critical">
+                                <span>最高优先</span>
+                            </label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('taskModal')">取消</button>
+                <button class="btn btn-secondary" onclick="submitToCoo()">提交COO审核</button>
+                <button class="btn btn-primary" onclick="submitDirect()">直接指派</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- COO对话模态框 -->
+    <div class="modal-overlay" id="cooChatModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>💬 COO智能对话</h3>
+                <button class="modal-close" onclick="closeCooChat()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="coo-chat-container">
+                    <div class="coo-chat-header">
+                        <div class="coo-chat-avatar">👔</div>
+                        <div class="coo-chat-info">
+                            <h4>COO智能助手</h4>
+                            <span>🟢 在线</span>
+                        </div>
+                    </div>
+                    <div class="coo-chat-messages" id="cooMessages">
+                        <div class="chat-message coo">
+                            <div class="chat-message-content">您好！我是COO智能助手。请描述您的任务需求，我将分析并给出建议，确认后自动分配给最合适的数字员工执行。</div>
+                        </div>
+                    </div>
+                    <div class="coo-thinking" id="cooThinking">
+                        <div class="thinking-dots">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                        </div>
+                        <span>COO思考中...</span>
+                    </div>
+                    <div class="coo-chat-input">
+                        <input type="text" class="form-input" id="cooInput" placeholder="输入您的任务需求..." onkeypress="handleCooInput(event)">
+                        <button class="btn btn-primary" onclick="sendCooMessage()">发送</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast提示 -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // ==================== 数据定义 ====================
+        const API_BASE = '/v1/agent-team';
+
+        // Agent数据
+        const agents = {
+            tech: [
+                { id: 'agent-1', name: '蓝图', role: '技术架构师', avatar: '🔷', skills: ['架构设计', '系统规划'], status: 'online', tasks: 2, personality: '严谨务实，逻辑清晰', expertise: '系统架构、微服务设计', workStyle: '注重全局和长远规划', goals: '打造稳定高效的技术底座', prompt: '【身份定义】你是技术架构师·蓝图，心海法律AI技术团队的首席架构师...\n【核心职责】负责系统架构设计与技术选型...' },
+                { id: 'agent-2', name: '匠心', role: '高级工程师', avatar: '🛠️', skills: ['代码开发', '性能优化'], status: 'online', tasks: 3, personality: '追求完美，注重细节', expertise: '代码重构、性能调优', workStyle: '匠心独运，精益求精', goals: '交付高质量代码' },
+                { id: 'agent-3', name: '铸基', role: '基础设施工程师', avatar: '🏗️', skills: ['DevOps', '云服务'], status: 'busy', tasks: 1, personality: '沉稳可靠', expertise: 'Kubernetes、CI/CD', workStyle: '稳扎稳打', goals: '建设稳定基础设施' },
+                { id: 'agent-4', name: '灵指', role: '前端工程师', avatar: '✨', skills: ['React', 'Vue'], status: 'online', tasks: 2, personality: '创意无限', expertise: '前端框架、UI设计', workStyle: '追求极致体验', goals: '打造用户喜爱界面' },
+                { id: 'agent-5', name: '明鉴', role: '测试工程师', avatar: '🔍', skills: ['自动化测试', 'QA'], status: 'online', tasks: 1, personality: '一丝不苟', expertise: '测试策略、质量保障', workStyle: '全面覆盖', goals: '保障产品质量' },
+                { id: 'agent-6', name: '铁壁', role: '安全工程师', avatar: '🛡️', skills: ['网络安全', '渗透测试'], status: 'offline', tasks: 0, personality: '警惕敏锐', expertise: '安全审计、漏洞修复', workStyle: '防患未然', goals: '守护系统安全' },
+                { id: 'agent-7', name: '磐石', role: '后端工程师', avatar: '🪨', skills: ['Java', 'Go'], status: 'online', tasks: 2, personality: '稳重踏实', expertise: '后端开发、数据库', workStyle: '稳中求进', goals: '构建可靠后端服务' },
+                { id: 'agent-8', name: '求索', role: '数据工程师', avatar: '🔮', skills: ['数据分析', 'AI/ML'], status: 'busy', tasks: 1, personality: '求知若渴', expertise: '数据挖掘、机器学习', workStyle: '探索创新', goals: '挖掘数据价值' },
+                { id: 'agent-9', name: '铁卫', role: '运维工程师', avatar: '⚔️', skills: ['Kubernetes', '监控'], status: 'online', tasks: 1, personality: '警觉果断', expertise: '运维自动化、监控告警', workStyle: '快速响应', goals: '保障服务稳定' }
+            ],
+            ops: [
+                { id: 'agent-10', name: '星谋', role: '策略运营', avatar: '⭐', skills: ['策略制定', '数据分析'], status: 'online', tasks: 2, personality: '高瞻远瞩', expertise: '战略规划、市场分析', workStyle: '全局思维', goals: '统筹团队发展' },
+                { id: 'agent-11', name: '墨言', role: '内容运营', avatar: '✍️', skills: ['文案创作', '内容策划'], status: 'online', tasks: 3, personality: '文采飞扬', expertise: '内容创作、品牌文案', workStyle: '灵感迸发', goals: '产出优质内容' },
+                { id: 'agent-12', name: '破圈', role: '增长运营', avatar: '🚀', skills: ['用户增长', '活动策划'], status: 'busy', tasks: 2, personality: '敢于突破', expertise: '增长黑客、裂变策略', workStyle: '大胆创新', goals: '实现用户增长' },
+                { id: 'agent-13', name: '暖心', role: '用户运营', avatar: '💝', skills: ['用户服务', '社群运营'], status: 'online', tasks: 1, personality: '温暖体贴', expertise: '用户服务、需求分析', workStyle: '用心服务', goals: '提升用户体验' },
+                { id: 'agent-14', name: '洞察', role: '商业分析', avatar: '🔮', skills: ['市场分析', '竞品研究'], status: 'online', tasks: 2, personality: '洞察敏锐', expertise: '数据分析、商业洞察', workStyle: '见微知著', goals: '提供决策支持' },
+                { id: 'agent-15', name: '触网', role: '渠道运营', avatar: '🌐', skills: ['渠道拓展', '合作对接'], status: 'offline', tasks: 0, personality: '善于社交', expertise: '渠道合作、资源整合', workStyle: '广结善缘', goals: '拓展业务渠道' },
+                { id: 'agent-16', name: '律典', role: '合规顾问', avatar: '⚖️', skills: ['法律合规', '风险控制'], status: 'online', tasks: 1, personality: '严谨专业', expertise: '法律法规、风险评估', workStyle: '审慎决策', goals: '保障合规运营' }
+            ]
+        };
+
+        // 任务数据
+        const tasks = [
+            { id: 'task-1', name: '小程序首页UI重构', assignee: '蓝图', status: 'progress', progress: 65, deadline: '2026-05-20' },
+            { id: 'task-2', name: '用户增长方案制定', assignee: '破圈', status: 'progress', progress: 40, deadline: '2026-05-22' },
+            { id: 'task-3', name: '性能优化方案', assignee: '匠心', status: 'pending', progress: 0, deadline: '2026-05-25' },
+            { id: 'task-4', name: '安全审计报告', assignee: '铁壁', status: 'completed', progress: 100, deadline: '2026-05-12' },
+            { id: 'task-5', name: '法律知识库更新', assignee: '律典', status: 'progress', progress: 80, deadline: '2026-05-18' },
+            { id: 'task-6', name: '活动策划方案', assignee: '破圈', status: 'pending', progress: 0, deadline: '2026-05-28' }
+        ];
+
+        // 登录状态
+        let isLoggedIn = false;
+        let authToken = localStorage.getItem('admin_token');
+
+        // ==================== 初始化 ====================
+        document.addEventListener('DOMContentLoaded', function() {
+            // 检查登录状态
+            if (authToken) {
+                showApp();
+            }
+
+            // 渲染 Agent 卡片
+            renderAgents();
+
+            // 渲染任务列表
+            renderTasks();
+
+            // 填充任务表单的 Agent 选项
+            populateTaskAssigneeSelect();
+
+            // 绑定导航点击
+            bindNavEvents();
+
+            // 绑定任务 Tab 切换
+            bindTaskTabEvents();
+
+            // 绑定表单提交
+            bindFormEvents();
+
+            // 绑定移动端菜单
+            bindMobileMenu();
+
+            // 加载核心业务数据
+            loadBusinessStats();
+
+            // 渲染团队快速列表
+            renderQuickAgentList();
+        });
+
+        // ==================== 登录相关 ====================
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const phone = document.getElementById('phoneInput').value;
+            const code = document.getElementById('verifyCodeInput').value;
+
+            if (!phone || phone.length !== 11) {
+                showToast('请输入正确的手机号', 'error');
+                return;
+            }
+
+            if (!code || code.length !== 6) {
+                showToast('请输入6位验证码', 'error');
+                return;
+            }
+
+            // 模拟登录成功（开发模式下验证码8888）
+            if (code === '8888' || code.length === 6) {
+                const token = 'admin_' + Date.now() + '_' + phone;
+                localStorage.setItem('admin_token', token);
+                localStorage.setItem('admin_phone', phone);
+                showToast('登录成功', 'success');
+                showApp();
+            } else {
+                showToast('验证码错误', 'error');
+            }
+        });
+
+        document.getElementById('sendCodeBtn').addEventListener('click', function() {
+            const phone = document.getElementById('phoneInput').value;
+            const btn = this;
+
+            if (!phone || phone.length !== 11) {
+                showToast('请输入正确的手机号', 'error');
+                return;
+            }
+
+            // 模拟发送验证码
+            let countdown = 60;
+            btn.disabled = true;
+            btn.textContent = countdown + '秒后重发';
+
+            const timer = setInterval(() => {
+                countdown--;
+                if (countdown <= 0) {
+                    clearInterval(timer);
+                    btn.disabled = false;
+                    btn.textContent = '获取验证码';
+                } else {
+                    btn.textContent = countdown + '秒后重发';
+                }
+            }, 1000);
+
+            // 模拟API调用
+            console.log('发送验证码到', phone);
+            showToast('验证码已发送', 'success');
+        });
+
+        function showApp() {
+            isLoggedIn = true;
+            document.getElementById('loginPage').style.display = 'none';
+            document.getElementById('appContainer').classList.add('active');
+        }
+
+        // ==================== 业务数据加载 ====================
+        function loadBusinessStats() {
+            // 从数据库 API 加载真实数据（通过 Nginx 代理）
+            fetch(API_BASE + '/admin/stats', {
+                method: 'GET',
+                headers: {
+                    'Authorization': 'Bearer ' + (authToken || 'xinclaw-law-2026-secret')
+                }
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('API 请求失败');
+                return response.json();
+            })
+            .then(data => {
+                // 更新用户数据
+                document.getElementById('statTotalUsers').textContent = data.total_users || 0;
+                document.getElementById('statUsersTrend').textContent = '+' + (data.new_users_today || 0) + ' 今日';
+
+                // 更新会员数据
+                document.getElementById('statVipUsers').textContent = data.vip_users || 0;
+                document.getElementById('statVipTrend').textContent = '+' + (data.new_vip_today || 0) + ' 今日';
+
+                // 更新订单数据
+                document.getElementById('statTotalOrders').textContent = data.total_orders || 0;
+                document.getElementById('statOrdersTrend').textContent = '+' + (data.pending_orders || 0) + ' 待处理';
+
+                // 更新收入数据
+                const revenue = data.total_revenue || 0;
+                document.getElementById('statTotalRevenue').textContent = '¥' + revenue.toLocaleString();
+                document.getElementById('statRevenueTrend').textContent = '+' + (data.today_revenue || 0) + ' 今日';
+
+                // 计算转化率
+                const conversionRate = data.total_users > 0 ? ((data.vip_users / data.total_users) * 100).toFixed(1) : 0;
+                document.getElementById('statConversionRate').textContent = conversionRate + '%';
+                document.getElementById('statConversionTrend').textContent = '会员转化率';
+
+                // 更新团队状态
+                updateTeamStatus();
+            })
+            .catch(error => {
+                console.error('加载业务数据失败:', error);
+                // 显示模拟数据
+                showMockStats();
+            });
+        }
+
+        function showMockStats() {
+            // 模拟数据展示
+            document.getElementById('statTotalUsers').textContent = '1,234';
+            document.getElementById('statUsersTrend').textContent = '+12 今日';
+            document.getElementById('statVipUsers').textContent = '328';
+            document.getElementById('statVipTrend').textContent = '+5 今日';
+            document.getElementById('statTotalOrders').textContent = '892';
+            document.getElementById('statOrdersTrend').textContent = '+3 待处理';
+            document.getElementById('statTotalRevenue').textContent = '¥28,450';
+            document.getElementById('statRevenueTrend').textContent = '+1,280 今日';
+            document.getElementById('statConversionRate').textContent = '26.6%';
+            document.getElementById('statConversionTrend').textContent = '会员转化率';
+        }
+
+        function updateTeamStatus() {
+            // 统计团队状态
+            const allAgents = [...agents.tech, ...agents.ops];
+            const online = allAgents.filter(a => a.status === 'online').length;
+            const busy = allAgents.filter(a => a.status === 'busy').length;
+            const offline = allAgents.filter(a => a.status === 'offline').length;
+
+            document.getElementById('onlineCount').textContent = online;
+            document.getElementById('busyCount').textContent = busy;
+            document.getElementById('offlineCount').textContent = offline;
+        }
+
+        function renderQuickAgentList() {
+            const quickList = document.getElementById('quickAgentList');
+            const allAgents = [...agents.tech, ...agents.ops];
+
+            // 按状态排序：在线 > 忙碌 > 离线
+            const sortedAgents = allAgents.sort((a, b) => {
+                const statusOrder = { online: 0, busy: 1, offline: 2 };
+                return statusOrder[a.status] - statusOrder[b.status];
+            });
+
+            quickList.innerHTML = sortedAgents.map(agent => `
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border);">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="font-size: 18px;">${agent.avatar}</span>
+                        <div>
+                            <div style="font-size: 13px; color: var(--text-primary);">${agent.name}</div>
+                            <div style="font-size: 11px; color: var(--text-muted);">${agent.role}</div>
+                        </div>
+                    </div>
+                    <span style="font-size: 12px; color: ${agent.status === 'online' ? 'var(--status-online)' : agent.status === 'busy' ? 'var(--status-busy)' : 'var(--status-offline)'};">
+                        ${agent.status === 'online' ? '🟢 在线' : agent.status === 'busy' ? '🟡 忙碌' : '⚪ 离线'}
+                    </span>
+                </div>
+            `).join('');
+        }
+
+        // ==================== 导航相关 ====================
+        function bindNavEvents() {
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.addEventListener('click', function() {
+                    const page = this.dataset.page;
+                    if (page) {
+                        showPage(page);
+                    }
+                });
+            });
+        }
+
+        function showPage(pageName) {
+            // 更新导航状态
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+                if (item.dataset.page === pageName) {
+                    item.classList.add('active');
+                }
+            });
+
+            // 更新页面标题
+            const titles = {
+                dashboard: '工作台',
+                agents: '数字员工',
+                tasks: '任务管理',
+                coo: 'COO对话',
+                permissions: '权限管理',
+                statistics: '数据统计',
+                settings: '系统设置'
+            };
+            document.getElementById('currentPageTitle').textContent = titles[pageName] || '工作台';
+
+            // 切换页面
+            document.querySelectorAll('.page-view').forEach(page => {
+                page.classList.remove('active');
+            });
+            document.getElementById(pageName + 'Page').classList.add('active');
+
+            // 关闭移动端菜单
+            document.getElementById('sidebar').classList.remove('open');
+        }
+
+        // ==================== Agent相关 ====================
+        function renderAgents() {
+            // 技术组
+            const techGrid = document.getElementById('techAgentGrid');
+            techGrid.innerHTML = agents.tech.map(agent => createAgentCard(agent)).join('');
+
+            // 运营组
+            const opsGrid = document.getElementById('opsAgentGrid');
+            opsGrid.innerHTML = agents.ops.map(agent => createAgentCard(agent)).join('');
+
+            // Agents页面
+            const agentsPageContent = document.getElementById('agentsPageContent');
+            agentsPageContent.innerHTML = `
+                <div class="team-group">
+                    <div class="team-group-header">
+                        <div class="team-indicator tech-indicator"></div>
+                        <span class="team-name">技术组</span>
+                        <span class="team-count">${agents.tech.length}人</span>
+                    </div>
+                    <div class="agent-grid">
+                        ${agents.tech.map(agent => createAgentCard(agent)).join('')}
+                    </div>
+                </div>
+                <div class="team-group">
+                    <div class="team-group-header">
+                        <div class="team-indicator ops-indicator"></div>
+                        <span class="team-name">运营组</span>
+                        <span class="team-count">${agents.ops.length}人</span>
+                    </div>
+                    <div class="agent-grid">
+                        ${agents.ops.map(agent => createAgentCard(agent)).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function createAgentCard(agent) {
+            return `
+                <div class="agent-card status-${agent.status}" onclick="openAgentDetail('${agent.id}')">
+                    <div class="agent-header">
+                        <div class="agent-avatar">
+                            ${agent.avatar}
+                            <span class="agent-status-dot status-dot-${agent.status}"></span>
+                        </div>
+                        <div class="agent-basic-info">
+                            <div class="agent-name">${agent.name}</div>
+                            <div class="agent-role">${agent.role}</div>
+                        </div>
+                    </div>
+                    <div class="agent-skills">
+                        ${agent.skills.map(skill => `<span class="skill-tag">${skill}</span>`).join('')}
+                    </div>
+                    <div class="agent-footer">
+                        <div class="task-count">📋 ${agent.tasks}个任务</div>
+                        <div class="agent-actions">
+                            <button class="agent-action-btn" onclick="event.stopPropagation(); openAgentDetail('${agent.id}')">详情</button>
+                            <button class="agent-action-btn" onclick="event.stopPropagation(); openTaskForAgent('${agent.id}')">派发</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function filterAgents() {
+            const teamFilter = document.getElementById('teamFilter')?.value || document.getElementById('agentsTeamFilter')?.value || 'all';
+            const statusFilter = document.getElementById('statusFilter')?.value || document.getElementById('agentsStatusFilter')?.value || 'all';
+
+            // 筛选技术组
+            const filteredTech = agents.tech.filter(agent => {
+                if (teamFilter !== 'all' && teamFilter !== 'tech') return false;
+                if (statusFilter !== 'all' && agent.status !== statusFilter) return false;
+                return true;
+            });
+
+            // 筛选运营组
+            const filteredOps = agents.ops.filter(agent => {
+                if (teamFilter !== 'all' && teamFilter !== 'ops') return false;
+                if (statusFilter !== 'all' && agent.status !== statusFilter) return false;
+                return true;
+            });
+
+            // 更新显示
+            document.getElementById('techGroup').style.display = teamFilter === 'ops' ? 'none' : 'block';
+            document.getElementById('opsGroup').style.display = teamFilter === 'tech' ? 'none' : 'block';
+
+            document.getElementById('techAgentGrid').innerHTML = filteredTech.map(agent => createAgentCard(agent)).join('');
+            document.getElementById('opsAgentGrid').innerHTML = filteredOps.map(agent => createAgentCard(agent)).join('');
+
+            // 更新统计
+            const totalOnline = [...filteredTech, ...filteredOps].filter(a => a.status === 'online').length;
+            const totalBusy = [...filteredTech, ...filteredOps].filter(a => a.status === 'busy').length;
+
+            // 更新Agents页面
+            if (document.getElementById('agentsPageContent')) {
+                document.getElementById('agentsPageContent').innerHTML = `
+                    <div class="team-group" style="${teamFilter === 'ops' ? 'display:none' : ''}">
+                        <div class="team-group-header">
+                            <div class="team-indicator tech-indicator"></div>
+                            <span class="team-name">技术组</span>
+                            <span class="team-count">${filteredTech.length}人</span>
+                        </div>
+                        <div class="agent-grid">
+                            ${filteredTech.map(agent => createAgentCard(agent)).join('')}
+                        </div>
+                    </div>
+                    <div class="team-group" style="${teamFilter === 'tech' ? 'display:none' : ''}">
+                        <div class="team-group-header">
+                            <div class="team-indicator ops-indicator"></div>
+                            <span class="team-name">运营组</span>
+                            <span class="team-count">${filteredOps.length}人</span>
+                        </div>
+                        <div class="agent-grid">
+                            ${filteredOps.map(agent => createAgentCard(agent)).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        function openAgentDetail(agentId) {
+            let agent = null;
+            for (const team of Object.values(agents)) {
+                const found = team.find(a => a.id === agentId);
+                if (found) {
+                    agent = found;
+                    break;
+                }
+            }
+
+            if (!agent) return;
+
+            document.getElementById('agentDetailTitle').textContent = `${agent.avatar} ${agent.name}`;
+            document.getElementById('agentDetailBody').innerHTML = `
+                <div class="agent-detail-header">
+                    <div class="agent-detail-avatar">
+                        ${agent.avatar}
+                        <span class="agent-status-dot status-dot-${agent.status}" style="bottom: 4px; right: 4px;"></span>
+                    </div>
+                    <div class="agent-detail-basic">
+                        <div class="agent-detail-name">${agent.name}</div>
+                        <div class="agent-detail-role">${agent.role}</div>
+                        <span class="agent-detail-status ${agent.status}">
+                            ${agent.status === 'online' ? '🟢 在线' : agent.status === 'busy' ? '🟡 忙碌' : '⚪ 离线'}
+                        </span>
+                    </div>
+                </div>
+
+                <div class="detail-section">
+                    <div class="detail-section-title">📋 基本信息</div>
+                    <div class="detail-section-content">
+                        <p><strong>性格特点：</strong>${agent.personality || '专业严谨'}</p>
+                        <p><strong>专业技能：</strong>${agent.expertise || agent.skills.join('、')}</p>
+                        <p><strong>工作风格：</strong>${agent.workStyle || '高效执行'}</p>
+                        <p><strong>工作目标：</strong>${agent.goals || '完成团队任务'}</p>
+                    </div>
+                </div>
+
+                <div class="detail-section">
+                    <div class="detail-section-title">🏷️ 技能标签</div>
+                    <div class="detail-tags">
+                        ${agent.skills.map(skill => `<span class="skill-tag">${skill}</span>`).join('')}
+                    </div>
+                </div>
+
+                <div class="detail-section">
+                    <div class="detail-section-title">🤖 System Prompt</div>
+                    <div class="prompt-editor">${agent.prompt || '【身份定义】你是' + agent.name + '...'}</div>
+                    <div class="prompt-version">
+                        <span>📜 版本：v3</span>
+                        <span>上次修改：2026-05-14 10:30</span>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 12px; margin-top: 20px;">
+                    <button class="btn btn-secondary" onclick="showToast('已复制Prompt', 'success')">复制Prompt</button>
+                    <button class="btn btn-primary" onclick="openTaskForAgent('${agent.id}'); closeModal('agentDetailModal');">派发任务</button>
+                </div>
+            `;
+
+            openModal('agentDetailModal');
+        }
+
+        function openTaskForAgent(agentId) {
+            let agent = null;
+            for (const team of Object.values(agents)) {
+                const found = team.find(a => a.id === agentId);
+                if (found) {
+                    agent = found;
+                    break;
+                }
+            }
+
+            if (agent) {
+                document.getElementById('taskAssignee').value = agentId;
+                document.getElementById('taskTeam').value = agent.team || 'auto';
+            }
+
+            openTaskModal();
+        }
+
+        // ==================== 任务相关 ====================
+        function renderTasks(filter = 'all') {
+            const filteredTasks = filter === 'all' ? tasks : tasks.filter(t => t.status === filter);
+
+            const taskRows = filteredTasks.map(task => {
+                const statusClass = task.status === 'progress' ? 'progress' : task.status;
+                const statusText = task.status === 'pending' ? '待执行' : task.status === 'progress' ? '进行中' : '已完成';
+
+                return `
+                    <tr>
+                        <td><span class="task-name">${task.name}</span></td>
+                        <td>
+                            <div class="task-assignee">
+                                <span>👤</span>
+                                <span>${task.assignee}</span>
+                            </div>
+                        </td>
+                        <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                        <td>
+                            <div class="progress-bar">
+                                <div class="progress-bar-fill" style="width: ${task.progress}%"></div>
+                            </div>
+                        </td>
+                        <td><span class="deadline">${task.deadline}</span></td>
+                        <td>
+                            <div class="task-actions">
+                                <button class="task-action-btn" onclick="viewTask('${task.id}')">查看</button>
+                                <button class="task-action-btn" onclick="completeTask('${task.id}')">完成</button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            document.getElementById('taskTableBody').innerHTML = taskRows;
+            document.getElementById('tasksPageTableBody').innerHTML = taskRows;
+        }
+
+        function bindTaskTabEvents() {
+            document.querySelectorAll('.task-tab').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const parent = this.closest('.task-panel');
+                    parent.querySelectorAll('.task-tab').forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+                    renderTasks(this.dataset.tab);
+                });
+            });
+        }
+
+        function populateTaskAssigneeSelect() {
+            const select = document.getElementById('taskAssignee');
+            const allAgents = [...agents.tech, ...agents.ops];
+            select.innerHTML = '<option value="">自动分配</option>' +
+                allAgents.map(agent => `<option value="${agent.id}">${agent.name}（${agent.role}）</option>`).join('');
+        }
+
+        function openTaskModal() {
+            document.getElementById('taskForm').reset();
+            openModal('taskModal');
+        }
+
+        function submitToCoo() {
+            const taskName = document.getElementById('taskName').value;
+            if (!taskName) {
+                showToast('请输入任务名称', 'error');
+                return;
+            }
+
+            // 提交到COO
+            closeModal('taskModal');
+            showToast('任务已提交COO审核', 'success');
+
+            // 打开COO对话
+            setTimeout(() => {
+                openCooChat();
+            }, 500);
+        }
+
+        function submitDirect() {
+            const taskName = document.getElementById('taskName').value;
+            if (!taskName) {
+                showToast('请输入任务名称', 'error');
+                return;
+            }
+
+            // 直接指派
+            const newTask = {
+                id: 'task-' + Date.now(),
+                name: taskName,
+                assignee: document.getElementById('taskAssignee').value || '自动分配',
+                status: 'pending',
+                progress: 0,
+                deadline: document.getElementById('taskDeadline').value || '2026-05-30'
+            };
+
+            tasks.unshift(newTask);
+            renderTasks();
+            closeModal('taskModal');
+            showToast('任务已直接指派', 'success');
+        }
+
+        function viewTask(taskId) {
+            const task = tasks.find(t => t.id === taskId);
+            if (task) {
+                showToast(`查看任务: ${task.name}`, 'success');
+            }
+        }
+
+        function completeTask(taskId) {
+            const task = tasks.find(t => t.id === taskId);
+            if (task) {
+                task.status = 'completed';
+                task.progress = 100;
+                renderTasks();
+                showToast(`任务 "${task.name}" 已完成`, 'success');
+            }
+        }
+
+        // ==================== COO 对话相关 ====================
+        function openCooChat() {
+            openModal('cooChatModal');
+        }
+
+        function closeCooChat() {
+            closeModal('cooChatModal');
+        }
+
+        function handleCooInput(event) {
+            if (event.key === 'Enter') {
+                sendCooMessage();
+            }
+        }
+
+        // ==================== 首页 COO 对话 ====================
+        const DASHBOARD_COO_API_URL = '/v1/chat/completions';
+        const DASHBOARD_COO_API_KEY = 'xinclaw-law-2026-secret';
+        let dashboardCooConversationHistory = [];
+
+        function handleDashboardCooInput(event) {
+            if (event.key === 'Enter') {
+                sendDashboardCooMessage();
+            }
+        }
+
+        function sendDashboardCooMessage() {
+            const input = document.getElementById('dashboardCooInput');
+            const message = input.value.trim();
+            if (!message) return;
+
+            // 添加用户消息
+            const messagesContainer = document.getElementById('dashboardCooMessages');
+            messagesContainer.innerHTML += `
+                <div class="chat-message user">
+                    <div class="chat-message-content">${escapeHtml(message)}</div>
+                </div>
+            `;
+
+            input.value = '';
+
+            // 显示 COO 思考中
+            document.getElementById('dashboardCooThinking').classList.add('active');
+
+            // 滚动到底部
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+            // 将用户消息添加到历史
+            dashboardCooConversationHistory.push({
+                role: 'user',
+                content: message
+            });
+
+            // 调用真正的 AI API
+            fetch(DASHBOARD_COO_API_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + DASHBOARD_COO_API_KEY
+                },
+                body: JSON.stringify({
+                    model: 'qwen3.5-plus',
+                    messages: [
+                        {
+                            role: 'system',
+                            content: `你是心海法律 AI 的首席运营官（COO），代号「COO」。
+
+你的职责是：
+- 承接总裁（用户）分配的任务
+- 将任务分解后分配给合适的 Agent 执行
+- 监督任务执行进度和质量
+- 协调团队协作，解决跨团队问题
+
+团队成员：
+运营团队：星谋、墨言、破圈、暖心、洞察、触网、律典
+技术团队：蓝图、匠心、铸基、灵指、明鉴、铁壁、磐石、求索、铁卫
+
+重要规则：
+1. 使用 delegate_task 分配任务给子 Agent，最多同时 3 个并行
+2. context 必须包含服务器路径、API 地址、具体要求
+3. 先诊断再修复，测试后再汇报
+4. 记录所有问题直到解决
+
+沟通风格：简洁专业、分点说明、主动汇报。`
+                        },
+                        ...dashboardCooConversationHistory
+                    ],
+                    stream: false,
+                    temperature: 0.7
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('API 请求失败：' + response.status);
+                }
+                return response.json();
+            })
+            .then(data => {
+                document.getElementById('dashboardCooThinking').classList.remove('active');
+                const reply = data.choices[0].message.content;
+
+                // 将 AI 回复添加到历史
+                dashboardCooConversationHistory.push({
+                    role: 'assistant',
+                    content: reply
+                });
+
+                messagesContainer.innerHTML += `
+                    <div class="chat-message coo">
+                        <div class="chat-message-content">${reply.replace(/\n/g, '<br>')}</div>
+                    </div>
+                `;
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            })
+            .catch(error => {
+                document.getElementById('dashboardCooThinking').classList.remove('active');
+                console.error('COO API 调用失败:', error);
+                messagesContainer.innerHTML += `
+                    <div class="chat-message coo">
+                        <div class="chat-message-content">抱歉，COO 服务暂时不可用。请确保 Hermes 服务正在运行。<br><br>错误信息：${error.message}</div>
+                    </div>
+                `;
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            });
+        }
+
+        // COO 对话相关配置 - 使用相对路径，Nginx 会代理到正确的服务
+        const COO_API_URL = '/v1/chat/completions';
+        const COO_API_KEY='xincla...cret';
+        let cooConversationHistory = [];
+
+        function sendCooMessage() {
+            const input = document.getElementById('cooInput');
+            const message = input.value.trim();
+            if (!message) return;
+
+            // 添加用户消息
+            const messagesContainer = document.getElementById('cooMessages');
+            messagesContainer.innerHTML += `
+                <div class="chat-message user">
+                    <div class="chat-message-content">${escapeHtml(message)}</div>
+                </div>
+            `;
+
+            input.value = '';
+
+            // 显示COO思考中
+            document.getElementById('cooThinking').classList.add('active');
+
+            // 滚动到底部
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+            // 将用户消息添加到历史
+            cooConversationHistory.push({
+                role: 'user',
+                content: message
+            });
+
+            // 调用真正的AI API
+            fetch(COO_API_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + COO_API_KEY
+                },
+                body: JSON.stringify({
+                    model: 'qwen3.5-plus',
+                    messages: [
+                        {
+                            role: 'system',
+                            content: `你是心海法律AI的首席运营官（COO），代号「COO」。
+
+你的职责是：
+- 承接总裁（用户）分配的任务
+- 将任务分解后分配给合适的Agent执行
+- 监督任务执行进度和质量
+- 协调团队协作，解决跨团队问题
+
+团队成员：
+运营团队：星谋、墨言、破圈、暖心、洞察、触网、律典
+技术团队：蓝图、匠心、铸基、灵指、明鉴、铁壁、磐石、求索、铁卫
+
+重要规则：
+1. 使用delegate_task分配任务给子Agent，最多同时3个并行
+2. context必须包含服务器路径、API地址、具体要求
+3. 先诊断再修复，测试后再汇报
+4. 记录所有问题直到解决
+
+沟通风格：简洁专业、分点说明、主动汇报。`
+                        },
+                        ...cooConversationHistory
+                    ],
+                    stream: false,
+                    temperature: 0.7
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('API请求失败: ' + response.status);
+                }
+                return response.json();
+            })
+            .then(data => {
+                document.getElementById('cooThinking').classList.remove('active');
+                const reply = data.choices[0].message.content;
+
+                // 将AI回复添加到历史
+                cooConversationHistory.push({
+                    role: 'assistant',
+                    content: reply
+                });
+
+                messagesContainer.innerHTML += `
+                    <div class="chat-message coo">
+                        <div class="chat-message-content">${reply.replace(/\n/g, '<br>')}</div>
+                    </div>
+                `;
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            })
+            .catch(error => {
+                document.getElementById('cooThinking').classList.remove('active');
+                console.error('COO API调用失败:', error);
+                messagesContainer.innerHTML += `
+                    <div class="chat-message coo">
+                        <div class="chat-message-content">抱歉，COO服务暂时不可用。请确保Hermes服务正在运行。<br><br>错误信息: ${error.message}</div>
+                    </div>
+                `;
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            });
+        }
+
+        // ==================== 模态框相关 ====================
+        function openModal(modalId) {
+            document.getElementById(modalId).classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        // 点击遮罩关闭
+        document.querySelectorAll('.modal-overlay').forEach(overlay => {
+            overlay.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    this.classList.remove('active');
+                    document.body.style.overflow = '';
+                }
+            });
+        });
+
+        // ==================== 工具函数 ====================
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = 'toast show ' + type;
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // ==================== 移动端相关 ====================
+        function bindMobileMenu() {
+            document.getElementById('menuToggle').addEventListener('click', function() {
+                document.getElementById('sidebar').classList.toggle('open');
+            });
+
+            // 点击内容区域关闭菜单
+            document.querySelector('.main-content').addEventListener('click', function() {
+                document.getElementById('sidebar').classList.remove('open');
+            });
+
+            // 滑动手势
+            let startX = 0;
+            let startY = 0;
+
+            document.addEventListener('touchstart', function(e) {
+                startX = e.touches[0].clientX;
+                startY = e.touches[0].clientY;
+            });
+
+            document.addEventListener('touchend', function(e) {
+                const endX = e.changedTouches[0].clientX;
+                const endY = e.changedTouches[0].clientY;
+                const diffX = endX - startX;
+                const diffY = endY - startY;
+
+                // 从左边缘向右滑
+                if (startX < 30 && diffX > 50 && Math.abs(diffY) < 50) {
+                    document.getElementById('sidebar').classList.add('open');
+                }
+
+                // 在侧边栏内向左滑
+                if (document.getElementById('sidebar').classList.contains('open') &&
+                    diffX < -50 && Math.abs(diffY) < 50) {
+                    document.getElementById('sidebar').classList.remove('open');
+                }
+            });
+        }
+
+        // ==================== 搜索功能 ====================
+        document.getElementById('searchInput').addEventListener('input', function(e) {
+            const query = e.target.value.toLowerCase();
+
+            // 筛选显示
+            [...agents.tech, ...agents.ops].forEach(agent => {
+                const card = document.querySelector(`[onclick="openAgentDetail('${agent.id}')"]`);
+                if (card) {
+                    const match = agent.name.toLowerCase().includes(query) ||
+                                  agent.role.toLowerCase().includes(query) ||
+                                  agent.skills.some(s => s.toLowerCase().includes(query));
+                    card.closest('.agent-card').style.display = match ? 'block' : 'none';
+                }
+            });
+        });
+
+        // ==================== 用户菜单 ====================
+        document.getElementById('userMenu').addEventListener('click', function() {
+            if (confirm('确定要退出登录吗？')) {
+                localStorage.removeItem('admin_token');
+                localStorage.removeItem('admin_phone');
+                location.reload();
+            }
+        });
+    </script>
+</body>
+</html>

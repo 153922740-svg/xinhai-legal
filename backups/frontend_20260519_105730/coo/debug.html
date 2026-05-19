@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>COO 调试工具</title>
+    <style>
+        body { font-family: monospace; background: #0a0e1a; color: #e8eaed; padding: 20px; }
+        .section { background: #131825; border: 1px solid #1e2538; padding: 16px; margin: 16px 0; border-radius: 8px; }
+        button { background: #6366f1; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; margin: 5px; }
+        pre { background: #1a1f2e; padding: 12px; border-radius: 6px; font-size: 12px; }
+        .success { color: #4ade80; } .error { color: #f87171; } .info { color: #94a3b8; }
+        input { padding: 10px; border-radius: 6px; border: 1px solid #1e2538; background: #1a1f2e; color: #e8eaed; margin: 5px; }
+    </style>
+</head>
+<body>
+    <h1>🔧 COO 调试工具</h1>
+    <div class="section"><h3>1. Token 检查</h3><button onclick="checkStorage()">检查</button><button onclick="clearStorage()">清除</button><pre id="storageResult">等待...</pre></div>
+    <div class="section"><h3>2. 登录测试</h3><input id="phone" value="15101675653"><input id="code" value="888888"><button onclick="sendCode()">获取验证码</button><button onclick="login()">登录</button><pre id="loginResult">等待...</pre></div>
+    <div class="section"><h3>3. Token 验证</h3><button onclick="checkAuth()">验证</button><pre id="authResult">等待...</pre></div>
+    <div class="section"><h3>4. 任务提交</h3><input id="msg" value="测试"><button onclick="submitTask()">提交</button><pre id="taskResult">等待...</pre></div>
+    <script>
+        const API='/api/v6';
+        function log(id,msg,cls='info'){document.getElementById(id).innerHTML=msg;document.getElementById(id).className=cls;}
+        function checkStorage(){const t=localStorage.getItem('coo_token');log('storageResult',t?'✅ Token: '+t.substring(0,16)+'...':'❌ 未设置',t?'success':'error');}
+        function clearStorage(){localStorage.clear();log('storageResult','✅ 已清除','success');location.reload();}
+        async function sendCode(){try{const r=await fetch(API+'/auth/send-code',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phone:document.getElementById('phone').value})});const d=await r.json();log('loginResult',d.code===200?'✅ 已发送':'❌ '+d.msg,d.code===200?'success':'error');}catch(e){log('loginResult','❌ '+e.message,'error');}}
+        async function login(){try{const r=await fetch(API+'/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phone:document.getElementById('phone').value,code:document.getElementById('code').value})});const d=await r.json();if(d.code===200){localStorage.setItem('coo_token',d.data.token);localStorage.setItem('coo_user',JSON.stringify(d.data));log('loginResult','✅ 登录成功！Token: '+d.data.token.substring(0,16)+'...','success');}else{log('loginResult','❌ '+d.msg,'error');}}catch(e){log('loginResult','❌ '+e.message,'error');}}
+        async function checkAuth(){const t=localStorage.getItem('coo_token');if(!t){log('authResult','❌ 无 Token','error');return;}try{const r=await fetch(API+'/auth/check',{headers:{'Authorization':'Bearer '+t}});const d=await r.json();log('authResult',d.data?.logged_in?'✅ Token 有效':'❌ 无效',d.data?.logged_in?'success':'error');}catch(e){log('authResult','❌ '+e.message,'error');}}
+        async function submitTask(){const t=localStorage.getItem('coo_token');if(!t){log('taskResult','❌ 无 Token','error');return;}try{const r=await fetch(API+'/task/submit',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+t},body:JSON.stringify({message:document.getElementById('msg').value,agent:'COO'})});const d=await r.json();log('taskResult',d.success?'✅ 成功！ID: '+d.task_id:'❌ '+d.error,d.success?'success':'error');}catch(e){log('taskResult','❌ '+e.message,'error');}}
+        window.onload=checkStorage;
+    </script>
+</body>
+</html>

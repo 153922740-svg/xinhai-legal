@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>积分商城 - 心海法律 AI</title>
+    <style>
+        :root{--bg-primary:#0a0e1a;--bg-secondary:#131825;--bg-card:#1a1f2e;--border:#1e2538;--text-primary:#e8eaed;--text-secondary:#94a3b8;--accent-primary:#6366f1;--accent-secondary:#8b5cf6;--success:#22c55e}
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg-primary);color:var(--text-primary);min-height:100vh;padding:20px}
+        .container{max-width:1000px;margin:0 auto}
+        .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:30px}
+        .header h1{font-size:24px}
+        .balance-card{background:linear-gradient(135deg,var(--accent-primary),var(--accent-secondary));border-radius:16px;padding:25px;margin-bottom:30px}
+        .balance-card .label{font-size:14px;opacity:0.9;margin-bottom:8px}
+        .balance-card .value{font-size:36px;font-weight:600}
+        .balance-card .actions{margin-top:15px}
+        .btn{padding:10px 20px;background:rgba(255,255,255,0.2);border:none;border-radius:8px;color:white;font-size:14px;cursor:pointer}
+        .btn:hover{background:rgba(255,255,255,0.3)}
+        .tabs{display:flex;gap:10px;margin-bottom:20px;border-bottom:1px solid var(--border);padding-bottom:15px}
+        .tab{padding:10px 20px;border-radius:8px;cursor:pointer;font-size:14px}
+        .tab.active{background:var(--accent-primary);color:white}
+        .tab:hover:not(.active){background:var(--bg-secondary)}
+        .goods-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:20px}
+        .goods-card{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:20px;transition:all 0.3s}
+        .goods-card:hover{border-color:var(--accent-primary);transform:translateY(-2px)}
+        .goods-card .icon{font-size:40px;margin-bottom:15px}
+        .goods-card .name{font-size:16px;font-weight:500;margin-bottom:8px}
+        .goods-card .desc{font-size:12px;color:var(--text-secondary);margin-bottom:15px}
+        .goods-card .points{font-size:18px;font-weight:600;color:var(--accent-primary);margin-bottom:15px}
+        .goods-card .btn{width:100%;padding:10px;background:var(--accent-primary);border:none;border-radius:8px;color:white;font-size:14px;cursor:pointer}
+        .goods-card .btn:disabled{opacity:0.5;cursor:not-allowed}
+        .goods-card .stock{font-size:12px;color:var(--text-secondary)}
+        .section-title{font-size:18px;margin:30px 0 20px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+        .toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.8);color:white;padding:12px 24px;border-radius:8px;font-size:14px;z-index:1000;display:none}
+    </style>
+</head>
+<body>
+    <div class="toast" id="toast"></div>
+    <div class="container">
+        <div class="header">
+            <h1>🎁 积分商城</h1>
+            <button class="btn" onclick="window.location.href='/signin.html'" style="background:var(--bg-secondary);color:var(--text-primary)">📅 去签到</button>
+        </div>
+        
+        <div class="balance-card">
+            <div class="label">我的积分</div>
+            <div class="value" id="pointsBalance">0</div>
+            <div class="actions">
+                <button class="btn" onclick="window.location.href='/integral.html'">📋 积分记录</button>
+                <button class="btn" onclick="window.location.href='/signin.html'">📅 每日签到</button>
+            </div>
+        </div>
+        
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('virtual')">虚拟商品</div>
+            <div class="tab" onclick="switchTab('coupon')">优惠券</div>
+            <div class="tab" onclick="switchTab('physical')">实物商品</div>
+        </div>
+        
+        <div class="goods-grid" id="goodsGrid"></div>
+    </div>
+    
+    <script>
+        const userId = localStorage.getItem('user_id');
+        let currentTab = 'virtual';
+        let allGoods = {};
+        
+        window.onload = function() {
+            if (!userId) {
+                window.location.href = '/login.html';
+                return;
+            }
+            loadBalance();
+            loadShop();
+        };
+        
+        async function loadBalance() {
+            try {
+                const r = await fetch(`/api/v1/integral/balance?user_id=${userId}`);
+                const d = await r.json();
+                
+                if (d.code === 200) {
+                    document.getElementById('pointsBalance').textContent = d.data.balance;
+                }
+            } catch(e) {
+                console.error(e);
+            }
+        }
+        
+        async function loadShop() {
+            try {
+                const r = await fetch('/api/v1/integral/shop');
+                const d = await r.json();
+                
+                if (d.code === 200) {
+                    allGoods = d.data;
+                    renderGoods(currentTab);
+                }
+            } catch(e) {
+                showToast('加载失败');
+            }
+        }
+        
+        function switchTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            renderGoods(tab);
+        }
+        
+        function renderGoods(category) {
+            const grid = document.getElementById('goodsGrid');
+            const goods = allGoods[category] || [];
+            
+            if (goods.length === 0) {
+                grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-secondary)">暂无商品</div>';
+                return;
+            }
+            
+            grid.innerHTML = goods.map(item => `
+                <div class="goods-card">
+                    <div class="icon">${getIcon(category)}</div>
+                    <div class="name">${item.name}</div>
+                    <div class="desc">${item.type === 'physical' ? '限量实物周边' : '虚拟商品，自动到账'}</div>
+                    <div class="points">🪙 ${item.points} 积分</div>
+                    ${item.type === 'physical' ? `<div class="stock">库存：${item.stock}</div>` : ''}
+                    <button class="btn" onclick="exchange('${item.id}')" ${item.type === 'physical' && item.stock <= 0 ? 'disabled' : ''}>
+                        ${item.type === 'physical' && item.stock <= 0 ? '已售罄' : '立即兑换'}
+                    </button>
+                </div>
+            `).join('');
+        }
+        
+        function getIcon(category) {
+            const icons = {virtual: '🎫', coupon: '🏷️', physical: '🎁'};
+            return icons[category] || '🎁';
+        }
+        
+        async function exchange(itemId) {
+            if (!confirm('确认兑换该商品？')) return;
+            
+            try {
+                const r = await fetch('/api/v1/integral/exchange', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({user_id: userId, item_id: itemId})
+                });
+                const d = await r.json();
+                
+                if (d.code === 200) {
+                    showToast('兑换成功！');
+                    loadBalance();
+                    loadShop();
+                } else {
+                    showToast(d.message);
+                }
+            } catch(e) {
+                showToast('兑换失败，请稍后重试');
+            }
+        }
+        
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.style.display = 'block';
+            setTimeout(() => {
+                toast.style.display = 'none';
+            }, 2000);
+        }
+    </script>
+</body>
+</html>
