@@ -70,7 +70,7 @@ def get_token_balance():
         
         db_path = '/home/admin/xinhai_legal_api/data/xinhai_legal.db'
         
-        user = UserModel.get_by_id(db_path, user_id)
+        from models.db import get_db; conn = get_db(db_path); cursor = conn.cursor(); cursor.execute("SELECT * FROM users WHERE id = ?", (user_id,)); row = cursor.fetchone(); user = dict(row) if row else None; conn.close()
         if not user:
             return jsonify({
                 'code': 404,
@@ -246,7 +246,7 @@ def purchase_tokens():
         
         db_path = '/home/admin/xinhai_legal_api/data/xinhai_legal.db'
         
-        user = UserModel.get_by_id(db_path, user_id)
+        from models.db import get_db; conn = get_db(db_path); cursor = conn.cursor(); cursor.execute("SELECT * FROM users WHERE id = ?", (user_id,)); row = cursor.fetchone(); user = dict(row) if row else None; conn.close()
         if not user:
             return jsonify({
                 'code': 404,

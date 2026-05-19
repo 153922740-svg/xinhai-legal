@@ -322,11 +322,17 @@ class UserModel:
         """, (username, password_hash, email, phone, role, full_name, now, now))
         conn.commit()
         user_id = cursor.lastrowid
-        return UserModel.get_by_id(db_path, user_id)
+        return UserModel.get_by_id(user_id, db_path)
     
     @staticmethod
-    def get_by_id(db_path: str, user_id: int) -> Optional[Dict]:
-        """通过ID获取用户"""
+    def get_by_id(user_id, db_path=None):
+        """通过ID获取用户 - db_path可选，默认从环境变量或项目路径获取"""
+        if db_path is None:
+            db_path = os.environ.get('XINCLAW_DB_PATH', '/home/admin/xinhai_legal_api/data/xinhai_legal.db')
+        if isinstance(db_path, dict) and 'user_id' in db_path:
+            # 修复：当传参顺序错乱时的兼容处理
+            user_id = db_path['user_id']
+            db_path = os.environ.get('XINCLAW_DB_PATH', '/home/admin/xinhai_legal_api/data/xinhai_legal.db')
         conn = get_db(db_path)
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM users WHERE id = ?", (user_id,))
@@ -366,14 +372,14 @@ class UserModel:
         allowed = ['email', 'phone', 'full_name', 'avatar', 'id_number']
         updates = {k: v for k, v in kwargs.items() if k in allowed}
         if not updates:
-            return UserModel.get_by_id(db_path, user_id)
+            return UserModel.get_by_id(user_id, db_path)
         sets = ', '.join(f"{k} = ?" for k in updates)
         values = list(updates.values()) + [user_id]
         conn = get_db(db_path)
         cursor = conn.cursor()
         cursor.execute(f"UPDATE users SET {sets} WHERE id = ?", values)
         conn.commit()
-        return UserModel.get_by_id(db_path, user_id)
+        return UserModel.get_by_id(user_id, db_path)
     
     @staticmethod
     def add_tokens(db_path: str, user_id: int, tokens: int, transaction_type: str = 'gift', description: str = '') -> bool:
