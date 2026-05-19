@@ -27,21 +27,21 @@ MODEL_CONFIGS = {
     'deepseek': {
         'name': 'DeepSeek-V3',
         'role': 'main',
-        'api_key': os.environ.get('DEEPSEEK_API_KEY', 'sk_test'),
+        'api_key': os.environ.get('DEEPSEEK_API_KEY'),
         'base_url': 'https://api.deepseek.com/v1',
         'model': 'deepseek-chat'
     },
     'qwen': {
         'name': 'Qwen3-Max',
         'role': 'validator_a',
-        'api_key': os.environ.get('ALIYUN_API_KEY', 'sk_test'),
+        'api_key': os.environ.get('ALIYUN_API_KEY'),
         'base_url': 'https://dashscope.aliyuncs.com/compatible-mode/v1',
         'model': 'qwen-max'
     },
     'glm': {
         'name': 'GLM-4.7',
         'role': 'validator_b',
-        'api_key': os.environ.get('ZHIPU_API_KEY', 'sk_test'),
+        'api_key': os.environ.get('ZHIPU_API_KEY'),
         'base_url': 'https://open.bigmodel.cn/api/paas/v4',
         'model': 'glm-4'
     }
@@ -92,64 +92,44 @@ def compute_similarity(text1, text2):
 
 def call_llm_api(model_config, messages, temperature=0.7):
     """
-    调用 LLM API（模拟实现）
-    实际部署时接入真实 API
+    调用 LLM API（支持 DeepSeek / Qwen / GLM）
+    实际接入真实 API，非模拟
     """
-    # TODO: 实际调用各模型 API
-    # 这里模拟返回
+    import urllib.request
     
     user_message = messages[-1]['content'] if messages else ''
+    api_key = model_config['api_key']
+    base_url = model_config['base_url']
+    model = model_config['model']
     
-    # 模拟响应
-    mock_response = {
-        'deepseek': f"""【DeepSeek-V3 主模型分析】
-
-我理解您遇到的法律问题。根据您描述的情况："{user_message[:50]}..."
-
-【现状梳理】
-根据您的描述，这是一个典型的法律咨询场景。
-
-【法律依据】
-《中华人民共和国民法典》相关规定...
-
-【维权流程】
-1. 收集证据
-2. 发送律师函
-3. 提起诉讼
-
-【风险提示】
-注意诉讼时效，一般民事纠纷诉讼时效为 3 年。
-
-【专业建议】
-建议您尽快采取行动，保留所有相关证据。""",
-
-        'qwen': f"""【Qwen3-Max 法律条文验证】
-
-经分析，该问题涉及的主要法律条文：
-1. 《民法典》第 XXX 条
-2. 《民事诉讼法》第 XXX 条
-
-主模型引用的法律条文基本准确。
-置信度：高""",
-
-        'glm': f"""【GLM-4.7 推理逻辑验证】
-
-主模型的推理逻辑链：
-1. 事实认定 → 2. 法律适用 → 3. 结论推导
-
-逻辑链条完整，推理过程合理。
-置信度：高"""
-    }
+    if not api_key:
+        return f"【{model_config['name']}】API密钥未配置，跳过验证"
     
-    model_name = model_config['name'].lower().replace('-', '_').replace('.', '')
-    if 'deepseek' in model_name:
-        return mock_response['deepseek']
-    elif 'qwen' in model_name:
-        return mock_response['qwen']
-    elif 'glm' in model_name:
-        return mock_response['glm']
+    payload = json.dumps({
+        "model": model,
+        "messages": messages,
+        "temperature": temperature,
+        "max_tokens": 2048
+    }).encode()
     
-    return mock_response['deepseek']
+    req = urllib.request.Request(
+        f"{base_url}/chat/completions",
+        data=payload,
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json"
+        }
+    )
+    
+    try:
+        resp = urllib.request.urlopen(req, timeout=30)
+        result = json.loads(resp.read())
+        return result['choices'][0]['message']['content']
+    except urllib.error.HTTPError as e:
+        error_body = e.read().decode()
+        return f"【{model_config['name']}】API调用失败 (HTTP {e.code}): {error_body[:200]}"
+    except Exception as e:
+        return f"【{model_config['name']}】API调用异常: {str(e)}"
 
 
 def consistency裁决(results):
