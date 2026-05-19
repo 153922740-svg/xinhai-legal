@@ -233,14 +233,14 @@ class AuthService:
         expire_at = datetime.now() + timedelta(days=3)
         conn.execute("""
             UPDATE users 
-            SET membership='trial', membership_end=?, tokens_balance=tokens_balance+1000
+            SET membership='trial', membership_end=?, tokens_balance=tokens_balance+2000
             WHERE id=?
         """, (expire_at.isoformat(), user_id))
         
         # 记录 Token 赠送
         conn.execute("""
             INSERT INTO token_transactions (user_id, amount, balance_after, transaction_type, description)
-            VALUES (?, 1000, (SELECT tokens_balance FROM users WHERE id=?), 'bonus', '新人注册赠送')
+            VALUES (?, 2000, (SELECT tokens_balance FROM users WHERE id=?), 'bonus', '新人注册赠送')
         """, (user_id, user_id))
         
         conn.commit()
