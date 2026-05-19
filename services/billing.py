@@ -145,13 +145,25 @@ class BillingService:
             conn.close()
     
     def purchase_tokens(self, user_id: int, amount_rmb: float) -> Optional[Dict]:
-        """购买 Token (1 元 = 1000 tokens * 单价)"""
+        """购买 Token（按PRD定价：2元=10,000 Token）"""
         user = UserModel.get_by_id(user_id)
         if not user:
             return None
         
+        # PRD定价: 2元=10,000 Token → 0.2元/千Token
         price_per_1k = self.get_token_price(user_id)
         tokens = int(amount_rmb / price_per_1k * 1000)
+        
+        # PRD固定充值档位（含优惠bonus）
+        package_map = {
+            10: 50000,
+            30: 160000,
+            50: 270000,
+            100: 600000,
+            500: 3200000
+        }
+        if int(amount_rmb) in package_map:
+            tokens = package_map[int(amount_rmb)]
         
         if tokens <= 0:
             return None

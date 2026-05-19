@@ -23,8 +23,8 @@ def get_billing_service():
         else:
             config = {
                 'billing': {
-                    'token_prices': {'basic': 0.002, 'premium': 0.001},
-                    'default_free_tokens': 1000,
+                    'token_prices': {'basic': 0.2, 'premium': 0.15},
+                    'default_free_tokens': 2000,
                     'membership': {
                         'monthly': 30,
                         'quarterly': 80,
@@ -54,8 +54,8 @@ def get_token_balance():
             "user_id": 1,
             "tokens_balance": 45000,
             "membership": "monthly",
-            "token_price": 0.001,
-            "estimated_value": 45.00
+            "token_price": 0.2,
+            "estimated_value": 10.00
         }
     }
     """
@@ -202,7 +202,7 @@ def purchase_tokens():
             "order_id": 456,
             "order_no": "T202605170001",
             "amount_rmb": 100.00,
-            "tokens_to_grant": 50000,
+            "tokens_to_grant": 600000,
             "status": "pending"
         }
     }
@@ -289,14 +289,16 @@ def get_token_pricing():
     {
         "code": 200,
         "data": {
-            "basic_price": 0.002,
-            "premium_price": 0.001,
+            "basic_price": 0.2,
+            "premium_price": 0.15,
             "currency": "CNY",
             "unit": "per 1000 tokens",
             "packages": [
-                {"amount_rmb": 10, "tokens": 5000, "bonus": 0},
-                {"amount_rmb": 50, "tokens": 25000, "bonus": 2500},
-                {"amount_rmb": 100, "tokens": 50000, "bonus": 10000}
+                {"amount_rmb": 10, "tokens": 50000, "bonus": 0},
+                {"amount_rmb": 30, "tokens": 160000, "bonus": 10000},
+                {"amount_rmb": 50, "tokens": 270000, "bonus": 20000},
+                {"amount_rmb": 100, "tokens": 600000, "bonus": 50000},
+                {"amount_rmb": 500, "tokens": 3200000, "bonus": 300000}
             ]
         }
     }
@@ -305,10 +307,11 @@ def get_token_pricing():
         billing = get_billing_service()
         
         packages = [
-            {'amount_rmb': 10, 'tokens': 5000, 'bonus': 0, 'recommended': False},
-            {'amount_rmb': 50, 'tokens': 25000, 'bonus': 2500, 'recommended': True},
-            {'amount_rmb': 100, 'tokens': 50000, 'bonus': 10000, 'recommended': False},
-            {'amount_rmb': 500, 'tokens': 250000, 'bonus': 75000, 'recommended': False}
+            {'amount_rmb': 10, 'tokens': 50000, 'bonus': 0, 'recommended': False},
+            {'amount_rmb': 30, 'tokens': 160000, 'bonus': 10000, 'recommended': True},
+            {'amount_rmb': 50, 'tokens': 270000, 'bonus': 20000, 'recommended': False},
+            {'amount_rmb': 100, 'tokens': 600000, 'bonus': 50000, 'recommended': False},
+            {'amount_rmb': 500, 'tokens': 3200000, 'bonus': 300000, 'recommended': False}
         ]
         
         return jsonify({
