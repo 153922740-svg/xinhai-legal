@@ -718,25 +718,65 @@ class ChatRouter:
         ]
     
     def _handle_document_request(self, input_text: str, user_id: int) -> List[Dict]:
-        """处理文档需求"""
-        doc_type = "合同" if "合同" in input_text else "法律文书"
+        """处理文档需求（方案B：AI语义识别，对话中直接生成）
+        
+        PRD要求：
+        - 用户说"生成文书"或类似表达
+        - AI识别文书类型和缺失的关键信息
+        - AI以自然对话方式逐步收集信息
+        - 关键信息齐全后生成文书
+        """
+        from phase3_document_generator import DOCUMENT_TEMPLATES
+        
+        # AI语义识别文书类型
+        doc_type_keywords = {
+            'civil_complaint': ['起诉状', '起诉', '打官司', '诉讼', '告他', '告人'],
+            'defense_statement': ['答辩状', '答辩', '应诉'],
+            'lawyer_letter': ['律师函', '函告', '警告信', '催告'],
+            'rental_contract': ['租房合同', '租赁合同', '租房协议', '出租', '承租'],
+            'loan_agreement': ['借条', '借款协议', '借款合同', '借据', '欠条', '借钱'],
+            'divorce_agreement': ['离婚协议', '离婚', '离婚书'],
+            'labor_arbitration': ['劳动仲裁', '仲裁申请书', '劳动纠纷', '讨薪', '拖欠工资'],
+            'debt_transfer': ['债权转让', '转让债权', '债权转移'],
+            'settlement': ['和解协议', '和解', '调解协议'],
+        }
+        
+        # 识别文书类型
+        matched_type = None
+        for doc_type, keywords in doc_type_keywords.items():
+            for keyword in keywords:
+                if keyword in input_text:
+                    matched_type = doc_type
+                    break
+            if matched_type:
+                break
+        
+        if not matched_type:
+            matched_type = 'civil_complaint'  # 默认民事起诉状
+        
+        template = DOCUMENT_TEMPLATES.get(matched_type, {})
+        doc_name = template.get('name', '法律文书')
+        fields = template.get('fields', [])
         
         return [
             Message(
                 type=MessageType.CARD_DOCUMENT.value,
-                content=f"为您生成{doc_type}模板",
+                content=f"我注意到您需要生成{doc_name}。让我帮您逐步完善信息。",
                 metadata={
-                    "doc_type": doc_type,
+                    "doc_type": matched_type,
+                    "doc_name": doc_name,
                     "template_available": True,
-                    "customizable": True
+                    "customizable": True,
+                    "fields": [{'name': f['name'], 'label': f['label'], 'required': f['required']} for f in fields],
+                    "collecting": True
                 }
             ).to_dict(),
             Message(
                 type=MessageType.BUTTON.value,
-                content="生成文档",
+                content=f"开始生成{doc_name}",
                 metadata={
                     "action": "generate_document",
-                    "doc_type": doc_type
+                    "doc_type": matched_type
                 }
             ).to_dict()
         ]
