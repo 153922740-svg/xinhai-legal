@@ -14,12 +14,25 @@ from flask import Blueprint, request, jsonify
 
 phase7_bp = Blueprint('phase7', __name__)
 
-# 合伙人等级配置
+# 合伙人等级配置（PRD V1.1 终版）
+# 5级：初级5%/铜牌8%/银牌12%/金牌15%/钻石20%
+# 升级条件：直推人数
 PARTNER_LEVELS = {
-    1: {'name': '普通合伙人', 'commission_rate': 0.10, 'upgrade_threshold': 0},
-    2: {'name': '白银合伙人', 'commission_rate': 0.15, 'upgrade_threshold': 1000},
-    3: {'name': '黄金合伙人', 'commission_rate': 0.20, 'upgrade_threshold': 5000},
-    4: {'name': '钻石合伙人', 'commission_rate': 0.25, 'upgrade_threshold': 20000},
+    1: {'name': '初级', 'commission_rate': 0.05, 'upgrade_threshold': 0, 'referrals_needed': 0},
+    2: {'name': '铜牌', 'commission_rate': 0.08, 'upgrade_threshold': 0, 'referrals_needed': 5},
+    3: {'name': '银牌', 'commission_rate': 0.12, 'upgrade_threshold': 0, 'referrals_needed': 20},
+    4: {'name': '金牌', 'commission_rate': 0.15, 'upgrade_threshold': 0, 'referrals_needed': 50},
+    5: {'name': '钻石', 'commission_rate': 0.20, 'upgrade_threshold': 0, 'referrals_needed': 100},
+}
+
+# 推荐奖励（PRD V1.1 终版）
+# 好友注册：5,000 Token + 100积分
+# 好友开会员：30,000 Token + 500积分
+# 好友充值：5%返利
+REFERRAL_REWARDS = {
+    'register': {'tokens': 5000, 'points': 100, 'desc': '好友注册奖励'},
+    'member': {'tokens': 30000, 'points': 500, 'desc': '好友开通会员奖励'},
+    'recharge': {'rate': 0.05, 'desc': '好友充值5%返利'},
 }
 
 # 提现配置
@@ -101,26 +114,27 @@ def upgrade_partner_level():
             db.close()
             return jsonify({'code': 400, 'message': '用户还不是合伙人'}), 400
         
-        # 计算累计收益
-        cursor.execute('SELECT SUM(amount) as total FROM commissions WHERE partner_id = ? AND status = "paid"', (partner['id'],))
+        # 计算直推人数（PRD升级条件基于直推而非累计收益）
+        cursor.execute('SELECT COUNT(*) as total FROM referrals WHERE referrer_id = (SELECT id FROM partners WHERE user_id = ?)', (user_id,))
         result = cursor.fetchone()
-        total_earnings = result['total'] or 0
+        referrals_count = result['total'] or 0
         
-        # 判断是否满足升级条件
+        # 判断是否满足升级条件（PRD规则）
         current_level = partner['level']
         new_level = current_level
         
-        for level in [4, 3, 2, 1]:
-            if total_earnings >= PARTNER_LEVELS[level]['upgrade_threshold']:
+        # 从高到低检查
+        for level in [5, 4, 3, 2]:
+            if referrals_count >= PARTNER_LEVELS[level]['referrals_needed']:
                 new_level = level
                 break
         
         # 如果等级提升，更新
-        if new_level < current_level:  # 数字越小等级越高
+        if new_level > current_level:  # 数字越大等级越高
             cursor.execute('''
-                UPDATE partners SET level = ?, total_earnings = ?, updated_at = ?
+                UPDATE partners SET level = ?, updated_at = ?
                 WHERE user_id = ?
-            ''', (new_level, total_earnings, datetime.now().isoformat(), user_id))
+            ''', (new_level, datetime.now().isoformat(), user_id))
             db.commit()
             
             level_info = PARTNER_LEVELS[new_level]
