@@ -150,6 +150,14 @@ try:
 except Exception as e:
     print(f"⚠️ Phase 13 历史对话 API 未加载：{e}")
 
+# ============== 委托付费模块 ==============
+try:
+    from entrust_api import entrust_bp
+    app.register_blueprint(entrust_bp)
+    print("✅ 委托付费 API 已注册（6个接口）")
+except Exception as e:
+    print(f"⚠️ 委托付费 API 未加载：{e}")
+
 # ============== 律师板块 ==============
 try:
     from lawyer_blueprint import lawyer_bp, init_lawyer_module
