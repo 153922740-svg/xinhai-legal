@@ -405,7 +405,7 @@ def invite_status():
     return jsonify({"code": 200, "message": "success", "data": d})
 
 # --- 费率设置（新增） ---
-from lawyer_extra_features import handle_rate_set, handle_rate_info
+from lawyer_extra_features import handle_rate_set, handle_rate_info, handle_lawyer_verify, handle_lawyer_verify_status
 
 @lawyer_bp.route("/rate/set", methods=["POST"])
 def rate_set():
@@ -439,6 +439,20 @@ def notif_read():
 def notif_unread():
     data = {"user_id": _get_user_id()}
     r = handle_notification_unread(data)
+    return jsonify(json.loads(r))
+
+# --- 律师执业核验（新增） ---
+@lawyer_bp.route("/lawyer-verify", methods=["POST"])
+def lawyer_verify():
+    data = request.get_json(silent=True) or {}
+    data["user_id"] = data.get("user_id") or _get_user_id()
+    r = handle_lawyer_verify(data)
+    return jsonify(json.loads(r))
+
+@lawyer_bp.route("/lawyer-verify/status", methods=["GET"])
+def lawyer_verify_status():
+    data = {"user_id": _get_user_id()}
+    r = handle_lawyer_verify_status(data)
     return jsonify(json.loads(r))
 
 # --- COO后台管理（5个，通过subprocess调用bridge_phase8） ---

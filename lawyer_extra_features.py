@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""心海法律 AI · 律师板块 — 新增功能：费率设置 + 消息通知 + 实名认证增强"""
+"""心海法律 AI · 律师板块 — 新增功能：费率设置 + 消息通知 + 实名认证增强 + 律师执业核验"""
 import sqlite3, json, sys
 from datetime import datetime
 
@@ -212,6 +212,101 @@ def handle_notification_unread(params):
     count = c.fetchone()[0]
     conn.close()
     return json_ok({"unread_count": count})
+
+# ==================== 律师执业核验（司法部小程序跳转） ====================
+def handle_lawyer_verify(params):
+    """POST /api/lawyer/lawyer-verify — 律师执业核验
+    用户完成实名认证后，跳转司法部"中国律师身份核验"小程序完成执业证核验
+    """
+    user_id = params.get('user_id')
+    verify_code = params.get('verify_code', '').strip()
+    license_no = params.get('license_no', '').strip()
+
+    if not user_id:
+        return json_err('缺少 user_id')
+    if not verify_code:
+        return json_err('缺少司法部核验凭证（verify_code）')
+    if not license_no:
+        return json_err('缺少律师执业证号')
+
+    conn = get_db()
+    c = conn.cursor()
+
+    # 检查是否已实名认证
+    c.execute('SELECT is_verified FROM users WHERE id = ?', (user_id,))
+    user = c.fetchone()
+    if not user:
+        conn.close()
+        return json_err('用户不存在')
+    if not user[0]:
+        conn.close()
+        return json_err('请先完成实名认证', code=403)
+
+    # 检查是否已核验通过
+    c.execute('SELECT lawyer_verified FROM lawyer_profiles WHERE user_id = ?', (user_id,))
+    lp = c.fetchone()
+    if lp and lp[0]:
+        conn.close()
+        return json_err('您已通过律师执业核验，不可重复提交', code=409)
+
+    # TODO: 验证司法部返回的verify_code
+    # verify_code是司法部小程序返回的临时凭证
+    # 需调用司法部接口验证凭证有效性+获取律师信息
+    # 当前阶段：verify_code不为空即视为验证通过（后续接入真实司法部API）
+    if len(verify_code) < 8:
+        conn.close()
+        return json_err('核验凭证无效', code=422)
+
+    now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+    # 更新或创建 lawyer_profiles
+    if lp:
+        c.execute('''
+            UPDATE lawyer_profiles SET
+                license_no=?, lawyer_verified=1, updated_at=?
+            WHERE user_id=?
+        ''', (license_no, now, user_id))
+    else:
+        c.execute('''
+            INSERT INTO lawyer_profiles
+                (user_id, license_no, lawyer_verified, created_at, updated_at)
+            VALUES (?, ?, 1, ?, ?)
+        ''', (user_id, license_no, now, now))
+
+    conn.commit()
+    conn.close()
+
+    return json_ok({
+        'lawyer_verified': True,
+        'license_no': license_no,
+        'message': '律师执业核验通过'
+    })
+
+def handle_lawyer_verify_status(params):
+    """GET /api/lawyer/lawyer-verify/status — 查询律师执业核验状态"""
+    user_id = params.get('user_id')
+    if not user_id:
+        return json_err('缺少 user_id')
+
+    conn = get_db()
+    c = conn.cursor()
+    c.execute('SELECT lawyer_verified, license_no, law_firm FROM lawyer_profiles WHERE user_id = ?', (user_id,))
+    row = c.fetchone()
+    conn.close()
+
+    if not row:
+        return json_ok({
+            'lawyer_verified': False,
+            'license_no': None,
+            'law_firm': None
+        })
+
+    return json_ok({
+        'lawyer_verified': bool(row[0]),
+        'license_no': row[1] or '',
+        'law_firm': row[2] or ''
+    })
+
 
 # ==================== 路由调度 ====================
 EXTRA_ACTION_MAP = {
