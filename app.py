@@ -150,6 +150,15 @@ try:
 except Exception as e:
     print(f"⚠️ Phase 13 历史对话 API 未加载：{e}")
 
+# ============== 律师板块 ==============
+try:
+    from lawyer_blueprint import lawyer_bp, init_lawyer_module
+    app.register_blueprint(lawyer_bp)
+    init_lawyer_module()
+    print("✅ 律师板块 API 已注册（35+接口）")
+except Exception as e:
+    print(f"⚠️ 律师板块 API 未加载：{e}")
+
 # ============== 健康检查 ==============
 
 @app.route('/api/v1/health', methods=['GET'])
