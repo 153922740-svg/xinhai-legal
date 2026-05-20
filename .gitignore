@@ -23,3 +23,6 @@ logs/
 # Secrets
 docs/SECRETS.md
 docs/security_scan_report.json
+
+# Audit reports (auto-generated)
+audit_reports/

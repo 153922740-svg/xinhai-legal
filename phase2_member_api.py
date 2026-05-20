@@ -113,7 +113,8 @@ def get_membership_status():
             "membership_end": "2026-06-01T00:00:00",
             "days_remaining": 15,
             "tokens_balance": 45000,
-            "is_active": true
+            "is_active": true,
+            "auto_renew": true  // monthly连续包月自动续费
         }
     }
     """
@@ -153,18 +154,23 @@ def get_membership_status():
         
         plan_name = billing.membership_plans.get(user.get('membership', 'free'), {}).get('name', '免费版')
         
+        # B07: 连续包月首月¥1自动续费标记
+        # monthly (连续包月) 启用自动续费，由微信支付服务商回调实际执行
+        membership_plan = user.get('membership', 'free')
+        auto_renew = membership_plan == 'monthly'
+        
         return jsonify({
             'code': 200,
             'message': 'success',
             'data': {
-                'membership': user.get('membership', 'free'),
+                'membership': membership_plan,
                 'membership_name': plan_name,
                 'membership_start': user.get('membership_start'),
                 'membership_end': user.get('membership_end'),
                 'days_remaining': days_remaining,
                 'tokens_balance': user.get('tokens_balance', 0),
                 'is_active': is_active,
-                'auto_renew': False  # 暂不支持自动续费
+                'auto_renew': auto_renew
             }
         })
     except Exception as e:
@@ -187,7 +193,7 @@ def create_membership_order():
     {
         "user_id": 1,
         "plan": "monthly",  // monthly, quarterly, yearly
-        "auto_renew": false  // 是否自动续费（暂不支持）
+        "auto_renew": false  // 是否自动续费 (monthly连续包月默认启用)
     }
     
     Response:

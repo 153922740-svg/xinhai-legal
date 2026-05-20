@@ -15,6 +15,9 @@ from enum import Enum
 import sqlite3
 import os
 
+# 导入4种记忆类型
+from long_term_memory import LongTermMemory, MemoryType
+
 
 # ========== 消息类型定义 ==========
 
@@ -100,6 +103,8 @@ class ChatRouter:
         """初始化 ChatRouter"""
         self.db_path = db_path
         self.contexts: Dict[str, ChatContext] = {}
+        # 初始化4种类型的长记忆系统（SQLite）
+        self.memory = LongTermMemory()
         self._init_db()
     
     def _init_db(self):
@@ -612,7 +617,58 @@ class ChatRouter:
                         metadata={"source": "ai_reply", "card_type": msg_type, **metadata}
                     )
         # ===============================================
-        
+
+        # ========== B08：4种类型记忆分类保存 ==========
+        try:
+            # 根据意图分类并保存用户输入到对应记忆类型
+            if intent == "pricing" or intent == "product" or intent == "order":
+                # 偏好相关 → preference 类型
+                self.memory.insert(
+                    session_id=session_id,
+                    content=user_input,
+                    memory_type=MemoryType.PREFERENCE.value,
+                    tags=["intent:" + intent, "user_input"],
+                    metadata={"domain": domain, "intent": intent}
+                )
+            elif domain and intent == "legal_consult":
+                # 法律咨询且识别到领域 → case 类型
+                self.memory.insert(
+                    session_id=session_id,
+                    content=user_input,
+                    memory_type=MemoryType.CASE.value,
+                    tags=["domain:" + domain, "user_input"],
+                    metadata={"domain": domain, "intent": intent}
+                )
+            else:
+                # personal 类型：一般性用户信息
+                self.memory.insert(
+                    session_id=session_id,
+                    content=user_input,
+                    memory_type=MemoryType.PERSONAL.value,
+                    tags=["user_input"],
+                    metadata={"domain": domain, "intent": intent}
+                )
+
+            # AI 回复摘要 → summary 类型（截取前200字符作为摘要）
+            if response_data.get("messages"):
+                reply_texts = []
+                for msg in response_data["messages"]:
+                    ct = msg.get("content", "")
+                    if ct:
+                        reply_texts.append(ct[:300])
+                if reply_texts:
+                    summary_text = " | ".join(reply_texts)[:500]
+                    self.memory.insert(
+                        session_id=session_id,
+                        content=summary_text,
+                        memory_type=MemoryType.SUMMARY.value,
+                        tags=["ai_summary", "intent:" + intent],
+                        metadata={"domain": domain, "intent": intent, "source": "route_message"}
+                    )
+        except Exception as e:
+            print(f"[记忆保存警告] {e}")
+        # ===============================================
+
         # 检查是否需要触发心理评估
         if self.should_trigger_psych_assessment(ctx) and user_id:
             psych_result = self.trigger_psych_assessment(

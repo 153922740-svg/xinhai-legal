@@ -242,7 +242,7 @@ def generate_referral_code():
         partner = cursor.fetchone()
         
         if not partner:
-            # 自动成为普通合伙人
+            # 自动成为初级合伙人（Level 1）
             referral_code = 'REF' + str(uuid.uuid4())[:8].upper()
             cursor.execute('''
                 INSERT INTO partners (user_id, level, referral_code, created_at)

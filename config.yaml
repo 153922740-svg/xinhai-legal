@@ -17,9 +17,9 @@ chat:
 ai_models:
   primary:
     provider: deepseek
-    model: deepseek-v4-pro
+    model: deepseek-chat
     base_url: https://api.deepseek.com/v1
-    api_key: "sk-fad...f690"
+    api_key: "sk-b4f4b3a332a740ab8ab6b5c247ec1268"
     timeout: 60
     max_retries: 3
   secondary:

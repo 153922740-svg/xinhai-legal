@@ -1,0 +1,626 @@
+#!/usr/bin/env python3
+"""
+Hermes Business Bridge P2 — 律师板块 Phase2（AI工具8个接口）
+被 hermes_business_api.py 通过 subprocess 调用
+实现：AI谈单分析、生成文书、文书审查、阅卷摘要、证据整理、法律检索、类案推送、庭审提纲
+通用逻辑：Token验证 → 律师身份检查 → 年费检查 → 扣Token → 记录日志 → 返回Mock数据
+"""
+import sys, json, sqlite3, uuid, os
+from datetime import datetime
+
+# AI模型调用
+import urllib.request, urllib.error, urllib.request
+
+# 提示词模板
+from lawyer_ai_prompts import (
+    PROMPT_ANALYZE, PROMPT_GENERATE_DOC, PROMPT_REVIEW_DOC,
+    PROMPT_SUMMARY, PROMPT_EVIDENCE, PROMPT_LEGAL_SEARCH,
+    PROMPT_CLASS_CASE, PROMPT_TRIAL_OUTLINE,
+    PROMPT_MOOT_COURT, PROMPT_CASE_ARCHIVE
+)
+
+# ==================== 配置 ====================
+DB_PATH = '/home/admin/xinhai_legal_api/data/xinhai_legal.db'
+TOKEN_CONSUME_AMOUNT = 100  # 每个接口固定扣100 Token
+
+# ==================== AI模型配置 ====================
+
+DEEPSEEK_CONFIG = {
+    "api_key": os.environ.get("DEEPSEEK_API_KEY", ""),
+    "base_url": "https://api.deepseek.com/v1",
+    "model": "deepseek-chat",
+    "name": "DeepSeek"
+}
+
+
+def call_llm(messages, temperature=0.5, max_tokens=2048):
+    """调用DeepSeek API"""
+    api_key = DEEPSEEK_CONFIG["api_key"]
+    if not api_key:
+        return "【错误】DeepSeek API密钥未配置"
+    
+    url = f"{DEEPSEEK_CONFIG['base_url']}/chat/completions"
+    payload = json.dumps({
+        "model": DEEPSEEK_CONFIG["model"],
+        "messages": messages,
+        "temperature": temperature,
+        "max_tokens": max_tokens,
+    }).encode("utf-8")
+    
+    try:
+        req = urllib.request.Request(
+            url, data=payload,
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+            },
+        )
+        resp = urllib.request.urlopen(req, timeout=30)
+        result = json.loads(resp.read().decode("utf-8"))
+        return result["choices"][0]["message"]["content"]
+    except urllib.error.HTTPError as e:
+        error_body = e.read().decode("utf-8", errors="replace")
+        return f'{{"error": "API调用失败 (HTTP {e.code})"}}'
+    except Exception as e:
+        return f'{{"error": "API调用异常: {str(e)[:100]}"}}'
+
+# ==================== 数据库操作 ====================
+
+def get_db():
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+
+def create_tables(params=None):
+    """初始化AI工具日志表（如果不存在）"""
+    db = get_db()
+    cursor = db.cursor()
+    
+    # 确保 lawyer_ai_tool_logs 表存在
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS lawyer_ai_tool_logs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            lawyer_id INTEGER NOT NULL,
+            tool_type TEXT,
+            input_summary TEXT,
+            output_summary TEXT,
+            tokens_used INTEGER DEFAULT 0,
+            created_at TEXT DEFAULT (datetime('now','localtime'))
+        )
+    ''')
+    
+    # 确保 lawyer_profiles 表存在（用于律师身份和年费检查）
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS lawyer_profiles (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER UNIQUE NOT NULL,
+            name TEXT NOT NULL,
+            avatar TEXT,
+            phone TEXT,
+            email TEXT,
+            law_firm TEXT,
+            license_no TEXT,
+            specialties TEXT,
+            years_exp INTEGER,
+            jurisdiction TEXT,
+            bio TEXT,
+            rating REAL DEFAULT 0,
+            case_count INTEGER DEFAULT 0,
+            fee_rate REAL,
+            status TEXT DEFAULT 'pending',
+            available INTEGER DEFAULT 1,
+            fee_status TEXT DEFAULT 'unpaid',
+            fee_expire_at TEXT,
+            created_at TEXT DEFAULT (datetime('now','localtime')),
+            updated_at TEXT DEFAULT (datetime('now','localtime'))
+        )
+    ''')
+    
+    db.commit()
+    db.close()
+    return {'success': True, 'data': {'message': '律师AI工具表初始化完成'}}
+
+
+# ==================== 通用验证逻辑 ====================
+
+def verify_token(token):
+    """验证Bearer Token，返回 user_id"""
+    if not token:
+        return None, '缺少认证Token'
+    
+    db = get_db()
+    cursor = db.cursor()
+    
+    # 通过 users 表查找 token（token存于username中作为简易token）
+    # 实际项目中应有token表，这里兼容现有模式
+    cursor.execute('SELECT id FROM users WHERE username = ?', (token,))
+    row = cursor.fetchone()
+    db.close()
+    
+    if row:
+        return row['id'], None
+    
+    # 尝试直接用token匹配user_id（兼容数字token场景）
+    try:
+        uid = int(token)
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute('SELECT id FROM users WHERE id = ?', (uid,))
+        row = cursor.fetchone()
+        db.close()
+        if row:
+            return row['id'], None
+    except (ValueError, TypeError):
+        pass
+    
+    return None, 'Token无效或已过期'
+
+
+def verify_lawyer_and_fee(user_id):
+    """验证律师身份和年费状态
+    要求：lawyer_profiles 表中 status='approved' 且 fee_status='paid'
+    """
+    db = get_db()
+    cursor = db.cursor()
+    
+    # 检查 lawyer_profiles
+    cursor.execute('''
+        SELECT id, status, fee_status, fee_expire_at FROM lawyer_profiles WHERE user_id = ?
+    ''', (user_id,))
+    profile = cursor.fetchone()
+    db.close()
+    
+    if not profile:
+        return None, '未找到律师信息，请先完成律师入驻'
+    
+    profile = dict(profile)
+    
+    if profile['status'] != 'approved':
+        return None, f'律师账号未通过审核（当前状态: {profile["status"]}）'
+    
+    if profile['fee_status'] != 'paid':
+        return None, '年费未缴纳，请先缴纳年费'
+    
+    # 检查年费是否过期
+    if profile.get('fee_expire_at'):
+        try:
+            expire_at = datetime.fromisoformat(profile['fee_expire_at'].replace('T', ' '))
+            if expire_at < datetime.now():
+                return None, '年费已过期，请续费'
+        except (ValueError, TypeError):
+            pass
+    
+    return profile['id'], None
+
+
+def consume_tokens(user_id, amount=TOKEN_CONSUME_AMOUNT, description=''):
+    """扣减Token（通过调用 P0 token_consume 逻辑）"""
+    if not user_id:
+        return {'success': False, 'error': '缺少 user_id'}
+    
+    try:
+        user_id = int(user_id)
+        amount = int(amount)
+    except (ValueError, TypeError):
+        return {'success': False, 'error': '参数类型错误'}
+    
+    if amount <= 0:
+        return {'success': False, 'error': '消耗数量必须大于0'}
+    
+    db = get_db()
+    cursor = db.cursor()
+    
+    try:
+        # 读取余额
+        cursor.execute("SELECT tokens_balance FROM users WHERE id=?", (user_id,))
+        row = cursor.fetchone()
+        if not row:
+            db.close()
+            return {'success': False, 'error': '用户不存在'}
+        
+        balance = row['tokens_balance']
+        if balance < amount:
+            db.close()
+            return {'success': False, 'error': f'Token不足（当前: {balance}, 需要: {amount}）'}
+        
+        new_balance = balance - amount
+        
+        # 更新用户余额
+        cursor.execute("UPDATE users SET tokens_balance=? WHERE id=?", (new_balance, user_id))
+        
+        # 记录交易
+        now = datetime.now().isoformat()
+        cursor.execute("""
+            INSERT INTO token_transactions (user_id, amount, balance_after, transaction_type, description, created_at)
+            VALUES (?, ?, ?, ?, ?, ?)
+        """, (user_id, -amount, new_balance, 'ai_tool', description or 'AI工具调用', now))
+        
+        db.commit()
+        db.close()
+        
+        return {
+            'success': True,
+            'data': {
+                'amount': -amount,
+                'balance_before': balance,
+                'balance_after': new_balance,
+                'transaction_type': 'ai_tool'
+            }
+        }
+    except Exception as e:
+        try:
+            db.close()
+        except Exception:
+            pass
+        return {'success': False, 'error': f'扣费失败: {str(e)}'}
+
+
+def log_ai_tool(lawyer_profile_id, tool_type, input_summary, output_summary, tokens_used=TOKEN_CONSUME_AMOUNT):
+    """记录AI工具调用日志"""
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute('''
+        INSERT INTO lawyer_ai_tool_logs (lawyer_id, tool_type, input_summary, output_summary, tokens_used, created_at)
+        VALUES (?, ?, ?, ?, ?, ?)
+    ''', (lawyer_profile_id, tool_type, input_summary[:200], output_summary[:200], tokens_used, datetime.now().isoformat()))
+    db.commit()
+    db.close()
+
+
+def get_user_id_from_token(params):
+    """从参数中提取并验证token，返回(user_id, error)
+    
+    支持两种方式：
+    1. Bearer Token（通过 _token 参数传入，查找 users.username）
+    2. 直接传入 user_id（兼容现有模式）
+    """
+    token = params.get('token', params.get('_token', ''))
+    
+    # 方式1: 如果有token，通过token查用户
+    if token:
+        return verify_token(token)
+    
+    # 方式2: 直接传user_id（兼容模式）
+    user_id = params.get('user_id')
+    if user_id:
+        try:
+            return int(user_id), None
+        except (ValueError, TypeError):
+            pass
+    
+    return None, '缺少认证Token或user_id'
+
+
+# ==================== 统一的AI工具处理函数 ====================
+
+def handle_ai_tool_request(params, tool_type, process_func):
+    """统一的AI工具请求处理模板
+    
+    1. 验证Token → 获取user_id
+    2. 验证律师身份 + 年费检查
+    3. 扣减Token
+    4. 记录日志
+    5. 执行业务处理（返回mock数据）
+    """
+    # Step 1: 验证Token
+    user_id_str, err = get_user_id_from_token(params)
+    if err:
+        return {'code': 401, 'message': '认证失败', 'data': {'error': err}}
+    
+    user_id = int(user_id_str)
+    
+    # Step 2: 验证律师身份和年费
+    lawyer_profile_id, err = verify_lawyer_and_fee(user_id)
+    if err:
+        return {'code': 403, 'message': '权限不足', 'data': {'error': err}}
+    
+    # Step 3: 扣减Token
+    token_result = consume_tokens(user_id, TOKEN_CONSUME_AMOUNT, description=f'AI{tool_type}')
+    if not token_result['success']:
+        return {'code': 402, 'message': 'Token扣减失败', 'data': {'error': token_result['error']}}
+    
+    # Step 4: 执行业务处理
+    result_data = process_func(params, user_id, lawyer_profile_id)
+    
+    # 添加token_cost到返回数据
+    if isinstance(result_data, dict):
+        result_data['token_cost'] = TOKEN_CONSUME_AMOUNT
+    
+    # Step 5: 记录日志
+    input_summary = json.dumps(params, ensure_ascii=False)
+    output_summary = json.dumps(result_data, ensure_ascii=False)
+    log_ai_tool(lawyer_profile_id, tool_type, input_summary, output_summary)
+    
+    return {
+        'code': 200,
+        'message': 'success',
+        'data': result_data
+    }
+
+
+# ==================== 1. AI谈单分析 ====================
+
+def handle_analyze(params):
+    """POST /api/lawyer/ai/analyze — AI谈单分析（真实AI调用）"""
+    case_description = params.get('case_description', '')
+    client_info = params.get('client_info', {})
+    
+    if not case_description:
+        return {'code': 400, 'message': '参数错误', 'data': {'error': '缺少 case_description'}}
+    
+    def process(p, uid, pid):
+        prompt = PROMPT_ANALYZE.format(
+            case_description=case_description,
+            client_info=json.dumps(client_info, ensure_ascii=False)
+        )
+        messages = [
+            {"role": "system", "content": "你是一名经验丰富的执业律师，擅长案件分析和策略制定。请严格按照要求输出JSON格式。"},
+            {"role": "user", "content": prompt}
+        ]
+        result = call_llm(messages, temperature=0.3, max_tokens=2048)
+        try:
+            clean = result.strip().replace('```json', '').replace('```', '').strip()
+            data = json.loads(clean)
+            return data
+        except:
+            return {
+                'analysis': result[:500],
+                'win_rate': 0.5,
+                'estimated_compensation': '需进一步分析',
+                'strategy_suggestions': 'AI分析结果格式异常，请重新尝试',
+                'fee_suggestion': '待评估',
+                '_ai_raw': result[:200]
+            }
+    
+    return handle_ai_tool_request(params, 'analyze', process)
+
+
+# ==================== 2. AI生成文书 ====================
+
+def handle_generate_doc(params):
+    """POST /api/lawyer/ai/generate-doc — AI生成文书"""
+    doc_type = params.get('doc_type', '')
+    case_info = params.get('case_info', {})
+    
+    if not doc_type:
+        return {'code': 400, 'message': '参数错误', 'data': {'error': '缺少 doc_type'}}
+    if not case_info:
+        return {'code': 400, 'message': '参数错误', 'data': {'error': '缺少 case_info'}}
+    
+    valid_types = ['起诉状', '答辩状', '代理词', '辩护词', '上诉状']
+    if doc_type not in valid_types:
+        return {'code': 400, 'message': '参数错误', 'data': {'error': f'无效的文书类型，可选: {",".join(valid_types)}'}}
+    
+    def process(p, uid, pid):
+        doc_id = int(f"{datetime.now().timestamp():.0f}") % 1000000
+        return {
+            'doc_id': doc_id,
+            'content': f'# {doc_type}\n\n## 当事人信息\n原告：{case_info.get("plaintiff", "未知")}\n被告：{case_info.get("defendant", "未知")}\n\n## 诉讼请求\n1. 请求法院判令被告支付合同款项人民币XXX元\n2. 请求法院判令被告承担本案全部诉讼费用\n\n## 事实与理由\n……（自动生成的事实与理由内容）……\n\n## 法律依据\n《中华人民共和国民法典》第五百七十七条……',
+            'word_url': f'/uploads/docs/doc_{doc_id}.docx'
+        }
+    
+    return handle_ai_tool_request(params, 'generate_doc', process)
+
+
+# ==================== 3. AI文书审查 ====================
+
+def handle_review_doc(params):
+    """POST /api/lawyer/ai/review-doc — AI文书审查"""
+    doc_content = params.get('doc_content', '')
+    doc_type = params.get('doc_type', '')
+    
+    if not doc_content:
+        return {'code': 400, 'message': '参数错误', 'data': {'error': '缺少 doc_content'}}
+    if not doc_type:
+        return {'code': 400, 'message': '参数错误', 'data': {'error': '缺少 doc_type'}}
+    
+    def process(p, uid, pid):
+        return {
+            'review_opinions': '经AI智能审查，本文书整体结构完整，逻辑清晰。\n\n主要意见：\n1. 事实陈述部分较为充分，但建议补充具体的合同履行时间节点\n2. 法律依据引用准确，可进一步补充相关司法解释\n3. 诉讼请求表述清晰，但金额计算依据需进一步明确',
+            'risk_warnings': '1. 部分证据的证明力较弱，建议补充核心证据原件\n2. 诉讼时效问题需要确认，建议核查最后一笔履约时间\n3. 对方的反诉风险需要评估',
+            'suggestions': '1. 建议补充合同履行过程中的关键时间节点\n2. 建议增加证据保全申请\n3. 建议对争议金额进行更精确的计算说明'
+        }
+    
+    return handle_ai_tool_request(params, 'review_doc', process)
+
+
+# ==================== 4. AI阅卷摘要 ====================
+
+def handle_summary(params):
+    """POST /api/lawyer/ai/summary — AI阅卷摘要"""
+    file_url = params.get('file_url', '')
+    file_type = params.get('file_type', '')
+    
+    if not file_url:
+        return {'code': 400, 'message': '参数错误', 'data': {'error': '缺少 file_url'}}
+    if not file_type:
+        return {'code': 400, 'message': '参数错误', 'data': {'error': '缺少 file_type'}}
+    
+    valid_types = ['pdf', 'image']
+    if file_type not in valid_types:
+        return {'code': 400, 'message': '参数错误', 'data': {'error': f'无效的文件类型，可选: {",".join(valid_types)}'}}
+    
+    def process(p, uid, pid):
+        return {
+            'timeline': '2025-03-01 双方签订合同\n2025-06-15 被告首次违约\n2025-08-20 原告发出催告函\n2025-10-10 双方协商未果\n2025-12-01 原告委托本所代理',
+            'relations': '原告（我方当事人）与被告之间存在合同关系。被告为合同履行方，原告为付款方。案件涉及第三方担保人，担保责任范围有待进一步确认。',
+            'key_facts': '1. 合同金额：500,000元\n2. 已支付金额：200,000元\n3. 未支付金额：300,000元\n4. 违约天数：已超过合同约定90天\n5. 催收记录：已有3次正式书面催收'
+        }
+    
+    return handle_ai_tool_request(params, 'summary', process)
+
+
+# ==================== 5. AI证据整理 ====================
+
+def handle_evidence(params):
+    """POST /api/lawyer/ai/evidence — AI证据整理"""
+    case_id = params.get('case_id')
+    evidence_list = params.get('evidence_list', [])
+    
+    if not case_id:
+        return {'code': 400, 'message': '参数错误', 'data': {'error': '缺少 case_id'}}
+    if not evidence_list or not isinstance(evidence_list, list):
+        return {'code': 400, 'message': '参数错误', 'data': {'error': '缺少 evidence_list 或格式不正确'}}
+    
+    def process(p, uid, pid):
+        return {
+            'evidence_catalog': '1. 合同类：\n   - 编号E001：合同原件（证明合同关系）\n   - 编号E002：合同补充协议\n2. 付款类：\n   - 编号E003：银行转账凭证\n   - 编号E004：收款收据\n3. 沟通类：\n   - 编号E005：催告函及回执\n   - 编号E006：微信聊天记录\n4. 其他类：\n   - 编号E007：律师函',
+            'chain_analysis': '证据链完整度：85%\n\n核心证据链：合同(E001) → 付款凭证(E003) → 催告函(E005) → 违约事实证明\n\n待完善环节：\n- 建议补充被告的书面承诺或确认函\n- 建议对电子证据进行公证保全',
+            'missing_suggestions': '1. 建议补充：被告身份信息证明文件\n2. 建议补充：合同履约过程中的全部往来邮件\n3. 建议获取：被告财产线索（用于财产保全）\n4. 建议公证：重要电子证据的公证文书'
+        }
+    
+    return handle_ai_tool_request(params, 'evidence', process)
+
+
+# ==================== 6. AI法律检索 ====================
+
+def handle_legal_search(params):
+    """POST /api/lawyer/ai/legal-search — AI法律检索"""
+    query = params.get('query', '')
+    case_type = params.get('case_type', '')
+    
+    if not query:
+        return {'code': 400, 'message': '参数错误', 'data': {'error': '缺少 query'}}
+    
+    def process(p, uid, pid):
+        return {
+            'results': [
+                {
+                    'title': '中华人民共和国民法典',
+                    'content': '第五百七十七条：当事人一方不履行合同义务或者履行合同义务不符合约定的，应当承担继续履行、采取补救措施或者赔偿损失等违约责任。',
+                    'relevance': 0.95
+                },
+                {
+                    'title': '最高人民法院关于适用《民法典》合同编通则的解释',
+                    'content': '第十八条：合同约定的违约金超过造成损失的百分之三十的，一般可以认定为"过分高于造成的损失"。',
+                    'relevance': 0.88
+                },
+                {
+                    'title': '民事诉讼法',
+                    'content': '第六十七条：当事人对自己提出的主张，有责任提供证据。',
+                    'relevance': 0.82
+                }
+            ]
+        }
+    
+    return handle_ai_tool_request(params, 'legal_search', process)
+
+
+# ==================== 7. AI类案推送 ====================
+
+def handle_class_case(params):
+    """POST /api/lawyer/ai/class-case — AI类案推送"""
+    case_id = params.get('case_id')
+    
+    if not case_id:
+        return {'code': 400, 'message': '参数错误', 'data': {'error': '缺少 case_id'}}
+    
+    def process(p, uid, pid):
+        return {
+            'similar_cases': [
+                {
+                    'case_id': 1001,
+                    'title': '张三与李四合同纠纷案',
+                    'court': '北京市海淀区人民法院',
+                    'judgment_date': '2025-03-15',
+                    'case_no': '(2025)京0108民初1234号',
+                    'summary': '案件基本事实与本案类似，均为合同履行争议，法院支持了原告的履行请求。',
+                    'similarity': 0.92
+                },
+                {
+                    'case_id': 1002,
+                    'title': '王五与赵六买卖合同纠纷案',
+                    'court': '北京市朝阳区人民法院',
+                    'judgment_date': '2024-11-20',
+                    'case_no': '(2024)京0105民初5678号',
+                    'summary': '案件涉及类似的法律适用问题，法院对违约金标准的认定有参考价值。',
+                    'similarity': 0.85
+                },
+                {
+                    'case_id': 1003,
+                    'title': '某科技公司与某贸易公司服务合同纠纷案',
+                    'court': '北京知识产权法院',
+                    'judgment_date': '2025-01-10',
+                    'case_no': '(2025)京73民终9012号',
+                    'summary': '二审判决对合同解除条件的认定具有指导意义。',
+                    'similarity': 0.78
+                }
+            ],
+            'compensation_range': '参考同类案件判决，预计赔偿金额在150,000-350,000元之间'
+        }
+    
+    return handle_ai_tool_request(params, 'class_case', process)
+
+
+# ==================== 8. AI庭审提纲 ====================
+
+def handle_trial_outline(params):
+    """POST /api/lawyer/ai/trial-outline — AI庭审提纲"""
+    case_id = params.get('case_id')
+    
+    if not case_id:
+        return {'code': 400, 'message': '参数错误', 'data': {'error': '缺少 case_id'}}
+    
+    def process(p, uid, pid):
+        return {
+            'cross_examination_outline': '一、对原告/公诉方证据的质证意见\n\n1. 对证据1（合同原件）的质证：\n   - 真实性：认可\n   - 合法性：认可\n   - 关联性：认可\n   \n2. 对证据2（付款凭证）的质证：\n   - 真实性：需核实原件\n   - 关联性：部分款项与本案无关\n   \n二、重点发问提纲\n1. 询问对方当事人：合同签订时是否有其他约定？\n2. 询问证人与当事人的关系及其证言的客观性',
+            'debate_outline': '一、代理意见\n1. 本案事实清楚，证据确实充分\n2. 被告的违约行为明确，应当承担违约责任\n3. 原告损失计算合理合法\n\n二、法律适用\n1. 主要引用《民法典》第577条、第584条\n2. 参考最高人民法院相关司法解释\n\n三、反驳预期\n1. 如被告主张不可抗力——我方已收集相关气象证明排除该可能\n2. 如被告主张情势变更——合同签订时间短于半年，不构成情势变更',
+            'judge_questions': '1. 法官可能询问：合同履行过程中双方是否有过变更？\n   应答要点：提供全部书面变更记录\n2. 法官可能询问：原告是否采取过止损措施？\n   应答要点：说明多次催收和协商过程\n3. 法官可能询问：是否有调解意愿？\n   应答要点：表明愿意在合理范围内调解'
+        }
+    
+    return handle_ai_tool_request(params, 'trial_outline', process)
+
+
+# ==================== 路由调度 ====================
+
+ACTION_MAP = {
+    'create_tables': create_tables,
+    'analyze': handle_analyze,
+    'generate_doc': handle_generate_doc,
+    'review_doc': handle_review_doc,
+    'summary': handle_summary,
+    'evidence': handle_evidence,
+    'legal_search': handle_legal_search,
+    'class_case': handle_class_case,
+    'trial_outline': handle_trial_outline,
+}
+
+
+def main():
+    if len(sys.argv) < 2:
+        print(json.dumps({'code': 400, 'message': '缺少参数 action', 'data': {}}))
+        sys.exit(1)
+
+    action = sys.argv[1]
+    body_str = sys.argv[2] if len(sys.argv) > 2 else '{}'
+
+    try:
+        params = json.loads(body_str) if body_str else {}
+    except json.JSONDecodeError as e:
+        print(json.dumps({'code': 400, 'message': f'JSON解析失败: {str(e)}', 'data': {}}))
+        sys.exit(1)
+
+    # 统一处理GET传参：将列表值转为单值
+    for k, v in params.items():
+        if isinstance(v, list) and len(v) == 1:
+            params[k] = v[0]
+
+    try:
+        handler = ACTION_MAP.get(action)
+        if handler:
+            result = handler(params)
+        else:
+            result = {'code': 404, 'message': f'未知操作: {action}', 'data': {}}
+
+        print(json.dumps(result, ensure_ascii=False), flush=True)
+
+        if result.get('code', 200) >= 400:
+            sys.exit(1)
+    except Exception as e:
+        print(json.dumps({'code': 500, 'message': str(e), 'data': {}}, ensure_ascii=False), flush=True)
+        sys.exit(1)
+
+
+if __name__ == '__main__':
+    main()
