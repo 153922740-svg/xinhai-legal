@@ -345,7 +345,105 @@ def create_model_iteration():
         return jsonify({'code': 500, 'message': f'创建失败：{str(e)}'}), 500
 
 
-# ============== 统计分析 ==============
+# ============== 自动学习循环 ==============
+
+@phase6_bp.route('/api/v1/auto-analysis', methods=['POST'])
+def auto_analysis():
+    """
+    自动分析待处理的 Badcase，按问题类型分组，生成今日分析报告
+    触发方式：手动调用，或由 cron 定时触发
+    """
+    try:
+        db = get_db()
+        cursor = db.cursor()
+        
+        # 1. 统计待处理 Badcase 数量
+        cursor.execute('SELECT COUNT(*) as count FROM badcases WHERE status = ?', ('pending',))
+        pending_count = cursor.fetchone()['count']
+        
+        # 2. 按问题原因分组
+        cursor.execute('''
+            SELECT reason, COUNT(*) as count 
+            FROM badcases 
+            WHERE status = 'pending' 
+            GROUP BY reason 
+            ORDER BY count DESC
+        ''')
+        reason_stats = [dict(row) for row in cursor.fetchall()]
+        
+        # 3. 今日新增
+        cursor.execute('''
+            SELECT COUNT(*) as count FROM badcases 
+            WHERE DATE(created_at) = DATE('now')
+        ''')
+        today_new = cursor.fetchone()['count']
+        
+        # 4. 7 天趋势
+        cursor.execute('''
+            SELECT DATE(created_at) as day, COUNT(*) as count, 
+                   SUM(CASE WHEN status = 'fixed' THEN 1 ELSE 0 END) as fixed_count
+            FROM badcases 
+            WHERE created_at >= DATE('now', '-7 days')
+            GROUP BY DATE(created_at)
+            ORDER BY day
+        ''')
+        trend = [dict(row) for row in cursor.fetchall()]
+        
+        db.close()
+        
+        return jsonify({
+            'code': 200,
+            'message': '分析完成',
+            'data': {
+                'pending_count': pending_count,
+                'today_new': today_new,
+                'by_reason': reason_stats,
+                'trend_7d': trend,
+                'analyzed_at': datetime.now().isoformat()
+            }
+        })
+        
+    except Exception as e:
+        return jsonify({'code': 500, 'message': f'分析失败：{str(e)}'}), 500
+
+
+@phase6_bp.route('/api/v1/feedback/trend', methods=['GET'])
+def feedback_trend():
+    """获取反馈趋势数据（7天）"""
+    try:
+        db = get_db()
+        cursor = db.cursor()
+        
+        # 反馈趋势
+        cursor.execute('''
+            SELECT DATE(created_at) as day, 
+                   COUNT(*) as total,
+                   AVG(rating) as avg_rating,
+                   SUM(CASE WHEN rating <= 2 THEN 1 ELSE 0 END) as negative_count
+            FROM feedbacks 
+            WHERE created_at >= DATE('now', '-7 days')
+            GROUP BY DATE(created_at)
+            ORDER BY day
+        ''')
+        trend = [dict(row) for row in cursor.fetchall()]
+        
+        # 总概览
+        cursor.execute('SELECT COUNT(*) as total, AVG(rating) as avg FROM feedbacks')
+        overview = dict(cursor.fetchone())
+        
+        db.close()
+        
+        return jsonify({
+            'code': 200,
+            'message': 'success',
+            'data': {
+                'overview': overview,
+                'trend_7d': trend
+            }
+        })
+        
+    except Exception as e:
+        return jsonify({'code': 500, 'message': f'查询失败：{str(e)}'}), 500
 
 @phase6_bp.route('/api/v1/feedback/stats', methods=['GET'])
 def get_feedback_stats():
