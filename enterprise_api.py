@@ -3,6 +3,7 @@
 企业信息模块（4个）+ 套餐模块（3个），共7个API
 """
 from flask import Blueprint, request, jsonify, g
+from scripts.optimize_performance import cached
 import re
 import sqlite3
 import time
@@ -2015,6 +2016,7 @@ def agent_get_clients():
 
 # ---------- ③ 推广话术匹配 ----------
 @enterprise_bp.route('/agent/scripts', methods=['GET'])
+@cached(ttl=120)
 def agent_get_scripts():
     """获取企业常法推广话术模板（支持按场景关键词匹配）"""
     try:
@@ -2082,6 +2084,7 @@ def agent_get_scripts():
 
 # ---------- ④ 企业常法介绍卡片 ----------
 @enterprise_bp.route('/agent/card', methods=['GET'])
+@cached(ttl=120)
 def agent_get_card():
     """获取企业常法产品介绍卡片（分享给客户）"""
     try:

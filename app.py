@@ -7,9 +7,14 @@ from flask import Flask, jsonify
 from flask_cors import CORS
 import os
 import sys
+import time
 
 # 添加 API 目录到路径
 sys.path.insert(0, '/home/admin/xinhai_legal_api')
+
+# 导入性能优化模块
+from scripts.optimize_performance import cached, ConfigCache, init_cache_db
+init_cache_db()
 
 app = Flask(__name__)
 CORS(app)
