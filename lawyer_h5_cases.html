@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>案件管理 - 心海法律AI</title>
+    <style>
+        :root {
+            --bg-primary: #0a0e1a;
+            --bg-secondary: #131825;
+            --bg-tertiary: #1e2438;
+            --bg-card: #1a1f2e;
+            --border: #2a3148;
+            --accent-primary: #6366f1;
+            --accent-secondary: #8b5cf6;
+            --accent-hover: #818cf8;
+            --text-primary: #e8eaed;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --status-pending: #f59e0b;
+            --status-processing: #3b82f6;
+            --status-completed: #22c55e;
+            --status-closed: #6b7280;
+            --status-error: #ef4444;
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 24px;
+            --shadow-card: 0 4px 20px rgba(0,0,0,0.3);
+            --shadow-glow: 0 0 30px rgba(99,102,241,0.15);
+            --font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: var(--font-family);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.5;
+        }
+        a { color: inherit; text-decoration: none; }
+
+        /* ==================== 导航栏 ==================== */
+        .nav-bar {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+            background: rgba(10,14,26,0.92);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+            padding: 12px 20px;
+            display: flex; align-items: center; gap: 12px;
+        }
+        .nav-back {
+            font-size: 20px; cursor: pointer; color: var(--text-secondary);
+            padding: 4px 8px; border-radius: var(--radius-sm);
+            transition: all 0.2s;
+        }
+        .nav-back:hover { background: var(--bg-tertiary); color: var(--text-primary); }
+        .nav-title { font-size: 18px; font-weight: 600; flex: 1; }
+
+        /* ==================== 侧边栏 ==================== */
+        .sidebar {
+            position: fixed; top: 57px; left: 0; bottom: 0;
+            width: 220px; background: var(--bg-secondary);
+            border-right: 1px solid var(--border);
+            padding: 16px 0; overflow-y: auto; z-index: 50;
+        }
+        .sidebar-item {
+            display: flex; align-items: center; gap: 12px;
+            padding: 12px 20px; color: var(--text-secondary);
+            font-size: 14px; transition: all 0.2s; cursor: pointer;
+            border-left: 3px solid transparent;
+        }
+        .sidebar-item:hover { background: rgba(99,102,241,0.08); color: var(--text-primary); }
+        .sidebar-item.active { color: var(--accent-primary); background: rgba(99,102,241,0.1); border-left-color: var(--accent-primary); }
+        .sidebar-item .icon { width: 20px; text-align: center; font-size: 16px; }
+        .sidebar-divider { height: 1px; background: var(--border); margin: 8px 16px; }
+        .sidebar-label { padding: 12px 20px 4px; font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+
+        /* ==================== 主内容 ==================== */
+        .main-content {
+            margin-left: 220px;
+            margin-top: 57px;
+            padding: 24px;
+            min-height: calc(100vh - 57px);
+        }
+
+        /* ==================== 搜索/筛选栏 ==================== */
+        .filter-bar {
+            display: flex; gap: 12px; align-items: center;
+            margin-bottom: 20px; flex-wrap: wrap;
+        }
+        .search-box {
+            flex: 1; min-width: 200px;
+            display: flex; align-items: center;
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: var(--radius-md); padding: 0 14px;
+        }
+        .search-box .search-icon { color: var(--text-muted); font-size: 14px; margin-right: 8px; }
+        .search-box input {
+            flex: 1; background: none; border: none;
+            padding: 10px 0; color: var(--text-primary);
+            font-size: 14px; outline: none;
+        }
+        .search-box input::placeholder { color: var(--text-muted); }
+        .filter-tabs {
+            display: flex; gap: 4px;
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: var(--radius-md); padding: 4px;
+        }
+        .filter-tab {
+            padding: 6px 14px; border-radius: var(--radius-sm);
+            font-size: 13px; color: var(--text-secondary);
+            cursor: pointer; transition: all 0.2s; border: none; background: none;
+        }
+        .filter-tab:hover { color: var(--text-primary); }
+        .filter-tab.active { background: var(--accent-primary); color: white; }
+
+        /* ==================== 案件列表 ==================== */
+        .case-list { display: flex; flex-direction: column; gap: 12px; }
+        .case-card {
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: var(--radius-md); padding: 18px 20px;
+            transition: all 0.3s; cursor: pointer;
+        }
+        .case-card:hover {
+            border-color: var(--accent-primary);
+            box-shadow: var(--shadow-glow);
+            transform: translateY(-1px);
+        }
+        .case-card-top {
+            display: flex; align-items: flex-start; justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        .case-card-title {
+            font-size: 15px; font-weight: 600;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .case-card .status-badge {
+            font-size: 11px; padding: 2px 10px; border-radius: 12px;
+            font-weight: 500; white-space: nowrap;
+        }
+        .status-badge.pending { background: rgba(245,158,11,0.15); color: #f59e0b; }
+        .status-badge.processing { background: rgba(59,130,246,0.15); color: #3b82f6; }
+        .status-badge.court_session { background: rgba(139,92,246,0.15); color: #8b5cf6; }
+        .status-badge.completed { background: rgba(34,197,94,0.15); color: #22c55e; }
+        .status-badge.closed { background: rgba(107,114,128,0.15); color: #6b7280; }
+        .status-badge.cancelled { background: rgba(239,68,68,0.15); color: #ef4444; }
+
+        .case-card-meta {
+            display: flex; gap: 16px; flex-wrap: wrap;
+            font-size: 13px; color: var(--text-secondary);
+        }
+        .case-card-meta span { display: flex; align-items: center; gap: 4px; }
+        .case-card-meta .label { color: var(--text-muted); }
+
+        /* ==================== 分页 ==================== */
+        .pagination {
+            display: flex; justify-content: center; gap: 8px;
+            margin-top: 24px;
+        }
+        .page-btn {
+            padding: 8px 16px; border-radius: var(--radius-sm);
+            border: 1px solid var(--border); background: var(--bg-card);
+            color: var(--text-secondary); font-size: 13px; cursor: pointer;
+            transition: all 0.2s;
+        }
+        .page-btn:hover { border-color: var(--accent-primary); color: var(--accent-primary); }
+        .page-btn.active { background: var(--accent-primary); color: white; border-color: var(--accent-primary); }
+        .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        /* ==================== 案件详情面板 ==================== */
+        .detail-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.6); z-index: 200;
+            display: none; align-items: center; justify-content: center;
+            padding: 20px;
+        }
+        .detail-overlay.show { display: flex; }
+        .detail-panel {
+            background: var(--bg-secondary); border: 1px solid var(--border);
+            border-radius: var(--radius-xl); width: 100%; max-width: 720px;
+            max-height: 85vh; overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+        .detail-header {
+            display: flex; align-items: flex-start; justify-content: space-between;
+            padding: 24px 28px 16px; border-bottom: 1px solid var(--border);
+            position: sticky; top: 0; background: var(--bg-secondary); z-index: 1;
+        }
+        .detail-title-area { flex: 1; }
+        .detail-title { font-size: 20px; font-weight: 600; }
+        .detail-subtitle { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+        .detail-close {
+            font-size: 24px; cursor: pointer; color: var(--text-muted);
+            padding: 4px 8px; border-radius: var(--radius-sm);
+        }
+        .detail-close:hover { color: var(--text-primary); background: var(--bg-tertiary); }
+
+        .detail-body { padding: 20px 28px 24px; }
+        .detail-section { margin-bottom: 24px; }
+        .detail-section-title {
+            font-size: 14px; font-weight: 600; color: var(--text-secondary);
+            margin-bottom: 12px; display: flex; align-items: center; gap: 6px;
+        }
+        .detail-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+        }
+        .detail-field {
+            display: flex; flex-direction: column; gap: 2px;
+        }
+        .detail-field .field-label { font-size: 12px; color: var(--text-muted); }
+        .detail-field .field-value { font-size: 14px; color: var(--text-primary); }
+
+        /* ==================== 状态操作 ==================== */
+        .detail-actions {
+            display: flex; gap: 8px; flex-wrap: wrap;
+            margin-top: 20px; padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+        .action-btn {
+            padding: 8px 20px; border-radius: var(--radius-sm);
+            font-size: 13px; cursor: pointer; transition: all 0.3s;
+            border: 1px solid var(--border); background: var(--bg-card);
+            color: var(--text-primary);
+        }
+        .action-btn:hover { border-color: var(--accent-primary); }
+        .action-btn.primary { background: var(--accent-primary); color: white; border-color: var(--accent-primary); }
+        .action-btn.primary:hover { background: var(--accent-hover); }
+        .action-btn.danger { border-color: var(--status-error); color: var(--status-error); }
+        .action-btn.danger:hover { background: rgba(239,68,68,0.1); }
+
+        /* ==================== 时间线 ==================== */
+        .timeline { position: relative; padding-left: 20px; }
+        .timeline::before {
+            content: ''; position: absolute; left: 7px; top: 4px; bottom: 4px;
+            width: 2px; background: var(--border);
+        }
+        .timeline-item { position: relative; padding-bottom: 16px; }
+        .timeline-item:last-child { padding-bottom: 0; }
+        .timeline-dot {
+            position: absolute; left: -16px; top: 4px;
+            width: 12px; height: 12px; border-radius: 50%;
+            background: var(--accent-primary); border: 2px solid var(--bg-secondary);
+        }
+        .timeline-content { }
+        .timeline-action { font-size: 14px; font-weight: 500; }
+        .timeline-desc { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+        .timeline-time { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+
+        /* ==================== 加载/空状态 ==================== */
+        .loading-state {
+            text-align: center; padding: 80px 20px; color: var(--text-muted);
+        }
+        .loading-state .spinner {
+            width: 36px; height: 36px;
+            border: 3px solid var(--border); border-top-color: var(--accent-primary);
+            border-radius: 50%; animation: spin 0.8s linear infinite;
+            margin: 0 auto 12px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .empty-state {
+            text-align: center; padding: 60px 20px; color: var(--text-muted);
+        }
+        .empty-state .empty-icon { font-size: 48px; margin-bottom: 12px; }
+
+        /* ==================== Toast ==================== */
+        .toast {
+            position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%);
+            background: var(--bg-tertiary); border: 1px solid var(--border);
+            border-radius: var(--radius-md); padding: 12px 24px;
+            font-size: 14px; color: var(--text-primary);
+            box-shadow: var(--shadow-card); z-index: 300;
+            opacity: 0; transition: opacity 0.3s; pointer-events: none;
+        }
+        .toast.show { opacity: 1; }
+
+        /* ==================== 响应式 ==================== */
+        @media (max-width: 768px) {
+            .sidebar { display: none; }
+            .main-content { margin-left: 0; padding: 16px; }
+            .filter-bar { flex-direction: column; }
+            .search-box { width: 100%; }
+            .filter-tabs { width: 100%; overflow-x: auto; }
+            .detail-grid { grid-template-columns: 1fr; }
+            .detail-panel { border-radius: var(--radius-lg); max-height: 90vh; }
+            .detail-header, .detail-body { padding: 16px 18px; }
+        }
+    </style>
+</head>
+<body>
+
+<nav class="nav-bar">
+    <a class="nav-back" href="/lawyer/dashboard.html">←</a>
+    <div class="nav-title">📋 案件管理</div>
+</nav>
+
+<aside class="sidebar">
+    <div class="sidebar-label">律师工具</div>
+    <a class="sidebar-item" href="/lawyer/dashboard.html"><span class="icon">📊</span> 工作台</a>
+    <a class="sidebar-item active" href="/lawyer/cases.html"><span class="icon">📋</span> 案件管理</a>
+    <a class="sidebar-item" href="/lawyer/schedule.html"><span class="icon">📅</span> 日程管理</a>
+    <a class="sidebar-item" href="/lawyer/income.html"><span class="icon">💰</span> 收益中心</a>
+    <a class="sidebar-item" href="/lawyer/clients.html"><span class="icon">👥</span> 客户管理</a>
+    <a class="sidebar-item" href="/lawyer/ai-tools.html"><span class="icon">🤖</span> AI工具台</a>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-label">系统</div>
+    <a class="sidebar-item" href="/index.html"><span class="icon">🏠</span> 返回首页</a>
+</aside>
+
+<main class="main-content">
+    <!-- 搜索/筛选 -->
+    <div class="filter-bar">
+        <div class="search-box">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="searchInput" placeholder="搜索案件名称/案号..." oninput="onSearch()">
+        </div>
+        <div class="filter-tabs">
+            <button class="filter-tab active" data-status="" onclick="onFilter(this)">全部</button>
+            <button class="filter-tab" data-status="pending" onclick="onFilter(this)">待处理</button>
+            <button class="filter-tab" data-status="processing" onclick="onFilter(this)">进行中</button>
+            <button class="filter-tab" data-status="court_session" onclick="onFilter(this)">开庭</button>
+            <button class="filter-tab" data-status="completed" onclick="onFilter(this)">已完成</button>
+            <button class="filter-tab" data-status="closed" onclick="onFilter(this)">已结案</button>
+        </div>
+    </div>
+
+    <!-- 案件列表 -->
+    <div id="caseListArea">
+        <div class="loading-state" id="loadingState">
+            <div class="spinner"></div>
+            <div>加载中...</div>
+        </div>
+    </div>
+
+    <!-- 分页 -->
+    <div class="pagination" id="pagination" style="display:none;">
+        <button class="page-btn" id="prevBtn" onclick="changePage(-1)">← 上一页</button>
+        <span id="pageInfo" style="color:var(--text-muted);font-size:13px;display:flex;align-items:center;"></span>
+        <button class="page-btn" id="nextBtn" onclick="changePage(1)">下一页 →</button>
+    </div>
+</main>
+
+<!-- 详情弹窗 -->
+<div class="detail-overlay" id="detailOverlay">
+    <div class="detail-panel">
+        <div class="detail-header">
+            <div class="detail-title-area">
+                <div class="detail-title" id="detailTitle">案件详情</div>
+                <div class="detail-subtitle" id="detailSubtitle">案号：-</div>
+            </div>
+            <div class="detail-close" onclick="closeDetail()">✕</div>
+        </div>
+        <div class="detail-body" id="detailBody">
+            <div class="loading-state"><div class="spinner"></div></div>
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API_BASE = window.location.origin + '/api';
+const USER_KEY = 'xinclaw_lawyer_user';
+
+let currentPage = 1;
+let currentFilter = '';
+let currentKeyword = '';
+let totalPages = 0;
+
+function getUser() {
+    try { return JSON.parse(localStorage.getItem(USER_KEY) || sessionStorage.getItem(USER_KEY) || '{}'); }
+    catch(e) { return {}; }
+}
+function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.classList.add('show');
+    clearTimeout(t._timer);
+    t._timer = setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function getStatusLabel(s) {
+    const m = {'pending':'待处理','processing':'进行中','court_session':'开庭中','settlement':'调解','appeal':'上诉','completed':'已完成','closed':'已结案','cancelled':'已取消'};
+    return m[s] || s;
+}
+function getTypeLabel(t) {
+    const m = {'contract':'合同','divorce':'离婚','labor':'劳动','ip':'知识产权','criminal':'刑事','civil':'民事','admin':'行政','other':'其他'};
+    return m[t] || t;
+}
+function getUrgencyLabel(u) {
+    return u === 'urgent' ? '⚡ 紧急' : u === 'high' ? '🔴 重要' : '普通';
+}
+
+// ==================== 加载案件列表 ====================
+async function loadCases(page) {
+    const area = document.getElementById('caseListArea');
+    area.innerHTML = '<div class="loading-state"><div class="spinner"></div><div>加载中...</div></div>';
+
+    try {
+        const user = getUser();
+        const uid = user.user_id || 1;
+        let url = `${API_BASE}/lawyer/cases?user_id=${uid}&page=${page}&limit=10`;
+        if (currentFilter) url += `&status=${currentFilter}`;
+        if (currentKeyword) url += `&keyword=${encodeURIComponent(currentKeyword)}`;
+
+        const res = await fetch(url);
+        const result = await res.json();
+        if (!result.success) throw new Error(result.error || '获取失败');
+
+        const data = result.data;
+        totalPages = Math.ceil(data.total / 10) || 1;
+        currentPage = page;
+
+        if (!data.items || data.items.length === 0) {
+            area.innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div><div>暂无案件</div></div>';
+            document.getElementById('pagination').style.display = 'none';
+            return;
+        }
+
+        area.innerHTML = '<div class="case-list">' + data.items.map(c => `
+            <div class="case-card" onclick="openDetail(${c.id})">
+                <div class="case-card-top">
+                    <div class="case-card-title">
+                        ${c.title}
+                        <span class="status-badge ${c.status}">${getStatusLabel(c.status)}</span>
+                    </div>
+                    <span style="font-size:13px;color:var(--text-muted)">${getTypeLabel(c.type)}</span>
+                </div>
+                <div class="case-card-meta">
+                    <span>📅 ${formatDate(c.created_at)}</span>
+                    <span>🏛 ${c.court || '-'}</span>
+                    <span>💰 ¥${(c.fee || 0).toLocaleString()}</span>
+                    <span>${getUrgencyLabel(c.urgency)}</span>
+                </div>
+            </div>
+        `).join('') + '</div>';
+
+        // 分页
+        const pag = document.getElementById('pagination');
+        pag.style.display = 'flex';
+        document.getElementById('pageInfo').textContent = `第 ${currentPage}/${totalPages} 页（共 ${data.total} 件）`;
+        document.getElementById('prevBtn').disabled = currentPage <= 1;
+        document.getElementById('nextBtn').disabled = currentPage >= totalPages;
+
+    } catch (e) {
+        area.innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div><div>${e.message}</div><button class="action-btn" onclick="loadCases(1)" style="margin-top:12px;">重试</button></div>`;
+    }
+}
+
+// ==================== 详情弹窗 ====================
+async function openDetail(caseId) {
+    const overlay = document.getElementById('detailOverlay');
+    overlay.classList.add('show');
+    document.getElementById('detailBody').innerHTML = '<div class="loading-state"><div class="spinner"></div></div>';
+
+    try {
+        const user = getUser();
+        const uid = user.user_id || 1;
+        const res = await fetch(`${API_BASE}/lawyer/cases/${caseId}?user_id=${uid}`);
+        const result = await res.json();
+        if (!result.success) throw new Error(result.error);
+
+        const c = result.data;
+        document.getElementById('detailTitle').textContent = c.title;
+        document.getElementById('detailSubtitle').textContent = `案号：${c.case_no || '-'} · ${getStatusLabel(c.status)}`;
+
+        document.getElementById('detailBody').innerHTML = `
+            <div class="detail-section">
+                <div class="detail-section-title">📋 案件信息</div>
+                <div class="detail-grid">
+                    <div class="detail-field"><span class="field-label">案件类型</span><span class="field-value">${getTypeLabel(c.type)}</span></div>
+                    <div class="detail-field"><span class="field-label">当前状态</span><span class="field-value">${getStatusLabel(c.status)}</span></div>
+                    <div class="detail-field"><span class="field-label">审理阶段</span><span class="field-value">${c.stage || '-'}</span></div>
+                    <div class="detail-field"><span class="field-label">紧急程度</span><span class="field-value">${getUrgencyLabel(c.urgency)}</span></div>
+                    <div class="detail-field"><span class="field-label">涉案金额</span><span class="field-value">¥${(c.fee || 0).toLocaleString()}</span></div>
+                    <div class="detail-field"><span class="field-label">受理法院</span><span class="field-value">${c.court || '-'}</span></div>
+                    <div class="detail-field" style="grid-column:1/-1"><span class="field-label">对方当事人</span><span class="field-value">${c.opponent || '-'}</span></div>
+                    <div class="detail-field" style="grid-column:1/-1"><span class="field-label">案情描述</span><span class="field-value">${c.description || '-'}</span></div>
+                </div>
+            </div>
+            <div class="detail-section">
+                <div class="detail-section-title">⏱ 时间节点</div>
+                <div class="detail-grid">
+                    <div class="detail-field"><span class="field-label">立案时间</span><span class="field-value">${formatDate(c.started_at)}</span></div>
+                    <div class="detail-field"><span class="field-label">创建时间</span><span class="field-value">${formatDate(c.created_at)}</span></div>
+                    <div class="detail-field"><span class="field-label">最近更新</span><span class="field-value">${formatDate(c.updated_at)}</span></div>
+                    <div class="detail-field"><span class="field-label">结案时间</span><span class="field-value">${c.closed_at ? formatDate(c.closed_at) : '-'}</span></div>
+                </div>
+            </div>
+            <div class="detail-actions">
+                <button class="action-btn primary" onclick="showToast('功能开发中')">📝 编辑案件</button>
+                <button class="action-btn" onclick="showToast('功能开发中')">📄 文书生成</button>
+                <button class="action-btn" onclick="showToast('功能开发中')">⏱ 时间线</button>
+                <button class="action-btn" onclick="showToast('功能开发中')">📎 材料管理</button>
+            </div>
+        `;
+    } catch (e) {
+        document.getElementById('detailBody').innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div><div>${e.message}</div></div>`;
+    }
+}
+
+function closeDetail() {
+    document.getElementById('detailOverlay').classList.remove('show');
+}
+
+// ==================== 筛选/搜索/翻页 ====================
+function onFilter(el) {
+    document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    currentFilter = el.dataset.status;
+    loadCases(1);
+}
+function onSearch() {
+    currentKeyword = document.getElementById('searchInput').value.trim();
+    loadCases(1);
+}
+function changePage(delta) {
+    const next = currentPage + delta;
+    if (next < 1 || next > totalPages) return;
+    loadCases(next);
+}
+
+// ==================== 工具函数 ====================
+function formatDate(iso) {
+    if (!iso) return '-';
+    try {
+        const d = new Date(iso);
+        return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    } catch(e) { return iso.slice(0,10); }
+}
+
+// 点击遮罩关闭
+document.getElementById('detailOverlay').addEventListener('click', function(e) {
+    if (e.target === this) closeDetail();
+});
+
+// ==================== 初始化 ====================
+loadCases(1);
+</script>
+</body>
+</html>
