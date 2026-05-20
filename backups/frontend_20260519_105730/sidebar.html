@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>企业常法 - 心海法律 AI</title>
+    <style>
+        :root{--bg-primary:#0a0e1a;--bg-secondary:#131825;--bg-card:#1a1f2e;--border:#1e2538;--text-primary:#e8eaed;--text-secondary:#94a3b8;--accent-primary:#6366f1;--accent-secondary:#8b5cf6;--success:#22c55e;--warning:#f59e0b;--danger:#ef4444}
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg-primary);color:var(--text-primary);min-height:100vh;font-size:14px}
+        .container{padding:12px;max-width:100%}
+        /* 顶部 */
+        .header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+        .header h1{font-size:16px;font-weight:600}
+        .header .badge{font-size:11px;padding:2px 8px;border-radius:10px;background:var(--accent-primary);color:#fff}
+        .header .badge.expired{background:var(--danger)}
+        .header .badge.trial{background:var(--warning);color:#000}
+        /* 快捷入口 */
+        .quick-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
+        .quick-btn{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center;cursor:pointer;transition:all 0.2s}
+        .quick-btn:active{background:var(--accent-primary);border-color:var(--accent-primary)}
+        .quick-btn .icon{font-size:22px;margin-bottom:4px}
+        .quick-btn .label{font-size:12px;color:var(--text-secondary)}
+        .quick-btn:active .label{color:#fff}
+        /* 搜索 */
+        .search-box{display:flex;gap:8px;margin-bottom:12px}
+        .search-box input{flex:1;padding:10px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;color:var(--text-primary);font-size:14px;outline:none}
+        .search-box input:focus{border-color:var(--accent-primary)}
+        .search-box input::placeholder{color:var(--text-secondary)}
+        .search-box button{padding:10px 16px;background:linear-gradient(135deg,var(--accent-primary),var(--accent-secondary));color:#fff;border:none;border-radius:8px;font-size:13px;cursor:pointer;white-space:nowrap}
+        .search-box button:active{opacity:0.8}
+        /* Tab切换 */
+        .tabs{display:flex;gap:0;margin-bottom:12px;background:var(--bg-secondary);border-radius:8px;overflow:hidden}
+        .tab{flex:1;padding:8px 0;text-align:center;font-size:12px;cursor:pointer;color:var(--text-secondary);transition:all 0.2s}
+        .tab.active{background:var(--accent-primary);color:#fff;font-weight:500}
+        /* 结果卡片 */
+        .result-section{margin-bottom:12px}
+        .result-section h3{font-size:13px;color:var(--text-secondary);margin-bottom:8px;padding-left:4px}
+        .result-item{background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:6px}
+        .result-item .title{font-size:14px;font-weight:500;color:var(--text-primary);margin-bottom:4px}
+        .result-item .desc{font-size:12px;color:var(--text-secondary);line-height:1.4}
+        .result-item .meta{font-size:11px;color:var(--text-secondary);margin-top:4px}
+        .result-item .cat{display:inline-block;font-size:10px;padding:1px 6px;border-radius:4px;background:var(--accent-primary);color:#fff;margin-right:4px}
+        /* 分类 */
+        .category-title{font-size:13px;font-weight:600;color:var(--accent-primary);margin:12px 0 6px;padding-left:4px;border-left:3px solid var(--accent-primary);padding-left:8px}
+        .empty-state{padding:30px 20px;text-align:center;color:var(--text-secondary)}
+        .empty-state .icon{font-size:36px;margin-bottom:8px}
+        .empty-state p{font-size:13px}
+        /* 加载 */
+        .loading{padding:20px;text-align:center;color:var(--text-secondary)}
+        .loading::after{content:'';display:inline-block;width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--accent-primary);border-radius:50%;animation:spin 0.8s linear infinite;margin-left:6px;vertical-align:middle}
+        @keyframes spin{to{transform:rotate(360deg)}}
+        /* 未绑定提示 */
+        .unbound{text-align:center;padding:40px 20px}
+        .unbound .icon{font-size:48px;margin-bottom:12px}
+        .unbound h2{font-size:18px;margin-bottom:8px}
+        .unbound p{font-size:13px;color:var(--text-secondary);margin-bottom:20px}
+        .unbound .btn{display:inline-block;padding:10px 24px;background:linear-gradient(135deg,var(--accent-primary),var(--accent-secondary));color:#fff;border:none;border-radius:8px;font-size:14px;cursor:pointer;text-decoration:none;margin:4px}
+        .unbound .btn-outline{background:transparent;border:1px solid var(--accent-primary);color:var(--accent-primary)}
+        /* 搜索结果头部 */
+        .result-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+        .result-header .count{font-size:12px;color:var(--text-secondary)}
+    </style>
+</head>
+<body>
+    <div class="container" id="app">
+        <!-- 加载状态 -->
+        <div class="loading" id="loading">加载中...</div>
+        
+        <!-- 未绑定状态 -->
+        <div class="unbound" id="unbound" style="display:none">
+            <div class="icon">🏢</div>
+            <h2>企业常法服务</h2>
+            <p>绑定企业后可使用合同条款查询、法律检索、常用模板等工具</p>
+            <a class="btn" href="/enterprise/create">创建企业</a>
+            <a class="btn btn-outline" href="/enterprise/bind">绑定企业</a>
+        </div>
+        
+        <!-- 已绑定主界面 -->
+        <div id="main" style="display:none">
+            <!-- 头部 -->
+            <div class="header">
+                <div>
+                    <h1 id="companyName">企业名称</h1>
+                </div>
+                <span class="badge" id="planBadge">基础版</span>
+            </div>
+            
+            <!-- 快捷入口 -->
+            <div class="quick-grid">
+                <div class="quick-btn" onclick="switchTab('chat')">
+                    <div class="icon">🔍</div>
+                    <div class="label">合同条款查询</div>
+                </div>
+                <div class="quick-btn" onclick="switchTab('law')">
+                    <div class="icon">⚖️</div>
+                    <div class="label">法律条文检索</div>
+                </div>
+                <div class="quick-btn" onclick="switchTab('template')">
+                    <div class="icon">📄</div>
+                    <div class="label">常用模板</div>
+                </div>
+                <div class="quick-btn" onclick="openReview()">
+                    <div class="icon">✅</div>
+                    <div class="label">合同审查</div>
+                </div>
+            </div>
+            
+            <!-- 搜索栏 -->
+            <div class="search-box" id="searchBar" style="display:none">
+                <input type="text" id="searchInput" placeholder="输入关键词搜索..." onkeydown="if(event.key==='Enter')doSearch()">
+                <button onclick="doSearch()">搜索</button>
+            </div>
+            
+            <!-- Tab -->
+            <div class="tabs" id="tabBar" style="display:none">
+                <div class="tab" data-tab="chat" onclick="switchTab('chat')">合同查询</div>
+                <div class="tab" data-tab="law" onclick="switchTab('law')">法律检索</div>
+                <div class="tab" data-tab="template" onclick="switchTab('template')">模板库</div>
+            </div>
+            
+            <!-- 结果区域 -->
+            <div id="results"></div>
+        </div>
+    </div>
+    
+    <script>
+        const API_BASE = '/api/enterprise/sidebar';
+        let currentTab = 'chat';
+        let companyInfo = null;
+        
+        // 从URL获取userId（企微侧边栏URL中携带）
+        function getUserId() {
+            const params = new URLSearchParams(window.location.search);
+            return params.get('user_id') || params.get('userId') || 'dev_user';
+        }
+        
+        window.onload = async function() {
+            document.getElementById('loading').style.display = '';
+            await loadSidebar();
+        };
+        
+        async function loadSidebar() {
+            try {
+                const userId = getUserId();
+                const r = await fetch(`${API_BASE}/load?user_id=${userId}`);
+                const d = await r.json();
+                
+                document.getElementById('loading').style.display = 'none';
+                
+                if (d.code === 200) {
+                    if (d.data.bound) {
+                        // 已绑定
+                        companyInfo = d.data.company;
+                        document.getElementById('main').style.display = '';
+                        
+                        document.getElementById('companyName').textContent = d.data.company.name || '企业名称';
+                        
+                        const badge = document.getElementById('planBadge');
+                        const planMap = {free:'体验版',basic:'基础版',standard:'标准版',professional:'专业版'};
+                        const planName = planMap[d.data.company.plan] || d.data.company.plan;
+                        badge.textContent = planName;
+                        
+                        if (d.data.company.days_left <= 7 && d.data.company.plan !== 'free') {
+                            badge.className = 'badge expired';
+                            badge.textContent = planName + ' · 即将到期';
+                        } else if (d.data.company.plan === 'free') {
+                            badge.className = 'badge trial';
+                        }
+                        
+                        // 默认显示模板
+                        switchTab('template');
+                    } else {
+                        document.getElementById('unbound').style.display = '';
+                    }
+                }
+            } catch(e) {
+                document.getElementById('loading').innerHTML = '<div class="empty-state"><p>加载失败，请重试</p></div>';
+            }
+        }
+        
+        function switchTab(tab) {
+            currentTab = tab;
+            
+            // 更新Tab样式
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            const tabEl = document.querySelector(`.tab[data-tab="${tab}"]`);
+            if (tabEl) tabEl.classList.add('active');
+            
+            document.getElementById('tabBar').style.display = '';
+            document.getElementById('searchBar').style.display = '';
+            document.getElementById('searchInput').value = '';
+            document.getElementById('searchInput').placeholder = 
+                tab === 'chat' ? '输入合同关键词...' : 
+                tab === 'law' ? '输入法律关键词...' : '搜索模板...';
+            
+            // 加载数据
+            if (tab === 'template') {
+                document.getElementById('searchBar').style.display = 'none';
+                loadTemplates();
+            } else {
+                document.getElementById('results').innerHTML = '<div class="loading">输入关键词搜索</div>';
+            }
+        }
+        
+        async function doSearch() {
+            const query = document.getElementById('searchInput').value.trim();
+            if (query.length < 2) return;
+            
+            document.getElementById('results').innerHTML = '<div class="loading">搜索中...</div>';
+            
+            try {
+                if (currentTab === 'chat') {
+                    await searchChat(query);
+                } else if (currentTab === 'law') {
+                    await searchLaw(query);
+                } else {
+                    await searchTemplates(query);
+                }
+            } catch(e) {
+                document.getElementById('results').innerHTML = '<div class="empty-state"><p>搜索失败，请重试</p></div>';
+            }
+        }
+        
+        async function searchChat(query) {
+            const r = await fetch(`${API_BASE}/chat-query`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({query})
+            });
+            const d = await r.json();
+            
+            if (d.code !== 200) {
+                document.getElementById('results').innerHTML = `<div class="empty-state"><p>${d.error || '搜索失败'}</p></div>`;
+                return;
+            }
+            
+            let html = '';
+            const data = d.data;
+            const total = (data.templates?.length || 0) + (data.reviews?.length || 0);
+            
+            html += `<div class="result-header"><h3>合同条款查询</h3><span class="count">${total}条结果</span></div>`;
+            
+            if (data.templates?.length > 0) {
+                html += `<div class="result-section"><h3>📄 合同模板</h3>`;
+                data.templates.forEach(t => {
+                    html += `<div class="result-item">
+                        <div class="title">${t.name}</div>
+                        <div class="desc">${t.desc || '暂无描述'}</div>
+                        <div class="meta"><span class="cat">${t.category || '通用'}</span></div>
+                    </div>`;
+                });
+                html += `</div>`;
+            }
+            
+            if (data.reviews?.length > 0) {
+                html += `<div class="result-section"><h3>📋 审查记录</h3>`;
+                data.reviews.forEach(r => {
+                    html += `<div class="result-item">
+                        <div class="title">${r.file_name || '合同'}</div>
+                        <div class="desc">${r.summary || '暂无摘要'}</div>
+                    </div>`;
+                });
+                html += `</div>`;
+            }
+            
+            if (total === 0) {
+                html += `<div class="empty-state"><p>未找到与「${query}」相关的结果</p></div>`;
+            }
+            
+            document.getElementById('results').innerHTML = html;
+        }
+        
+        async function searchLaw(query) {
+            const r = await fetch(`${API_BASE}/law-check`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({query})
+            });
+            const d = await r.json();
+            
+            if (d.code !== 200) {
+                document.getElementById('results').innerHTML = `<div class="empty-state"><p>${d.error || '搜索失败'}</p></div>`;
+                return;
+            }
+            
+            const data = d.data;
+            let html = `<div class="result-header"><h3>⚖️ 法律条文检索</h3><span class="count">${data.total}条结果</span></div>`;
+            
+            if (data.results?.length > 0) {
+                data.results.forEach(r => {
+                    html += `<div class="result-item">
+                        <div class="title">审查记录 #${r.id}</div>
+                        <div class="desc">${r.summary || '暂无内容'}</div>
+                    </div>`;
+                });
+            } else {
+                html += `<div class="empty-state"><p>未找到与「${query}」相关的法律条文</p></div>`;
+            }
+            
+            document.getElementById('results').innerHTML = html;
+        }
+        
+        async function loadTemplates() {
+            document.getElementById('results').innerHTML = '<div class="loading">加载模板...</div>';
+            
+            const r = await fetch(`${API_BASE}/templates`);
+            const d = await r.json();
+            
+            if (d.code !== 200) {
+                document.getElementById('results').innerHTML = '<div class="empty-state"><p>加载失败</p></div>';
+                return;
+            }
+            
+            let html = `<div class="result-header"><h3>📄 常用模板</h3><span class="count">${d.data.total}个模板</span></div>`;
+            
+            if (d.data.categories?.length > 0) {
+                d.data.categories.forEach(cat => {
+                    html += `<div class="category-title">${cat.name}</div>`;
+                    cat.items.forEach(t => {
+                        html += `<div class="result-item">
+                            <div class="title">${t.name}</div>
+                            <div class="desc">${t.description || ''}</div>
+                        </div>`;
+                    });
+                });
+            } else {
+                html += '<div class="empty-state"><p>暂无模板</p></div>';
+            }
+            
+            document.getElementById('results').innerHTML = html;
+        }
+        
+        async function searchTemplates(query) {
+            // 模板没有搜索接口，复用全量加载
+            await loadTemplates();
+        }
+        
+        function openReview() {
+            window.open('/enterprise/contract', '_blank');
+        }
+    </script>
+</body>
+</html>
