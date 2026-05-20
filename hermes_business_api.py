@@ -343,6 +343,9 @@ class BusinessAPIHandler(BaseHTTPRequestHandler):
                 self._handle_bridge_lawyer_user_get('lawyer_detail', {**q, 'lawyer_id': lawyer_id})
             elif p in ('/api/lawyer/invite/status', '/api/v1/lawyer/invite/status'):
                 self._handle_bridge_lawyer_user_get('invite_status', q)
+            elif p in ('/api/lawyer/dashboard', '/api/v1/lawyer/dashboard'):
+                q_flat = {k: v[0] if isinstance(v, list) and len(v) == 1 else v for k, v in q.items()}
+                self._handle_bridge_lawyer_user_get('lawyer_dashboard', q_flat)
             elif p.startswith('/api/v1/lawyer/') and p.split('/')[-1].isdigit():
                 # v1兼容
                 lawyer_id = p.split('/')[-1]
