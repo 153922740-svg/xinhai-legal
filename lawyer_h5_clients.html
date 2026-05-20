@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>客户管理 - 心海法律AI</title>
+    <style>
+        :root {
+            --bg-primary: #0a0e1a; --bg-secondary: #131825; --bg-tertiary: #1e2438;
+            --bg-card: #1a1f2e; --border: #2a3148;
+            --accent-primary: #6366f1; --accent-secondary: #8b5cf6; --accent-hover: #818cf8;
+            --text-primary: #e8eaed; --text-secondary: #94a3b8; --text-muted: #64748b;
+            --success: #22c55e; --warning: #f59e0b; --error: #ef4444;
+            --radius-sm: 8px; --radius-md: 12px; --radius-lg: 16px; --radius-xl: 24px;
+            --shadow-card: 0 4px 20px rgba(0,0,0,0.3); --shadow-glow: 0 0 30px rgba(99,102,241,0.15);
+            --font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:var(--font-family); background:var(--bg-primary); color:var(--text-primary); min-height:100vh; line-height:1.5; }
+
+        .nav-bar { position:fixed; top:0; left:0; right:0; z-index:100; background:rgba(10,14,26,0.92); backdrop-filter:blur(20px); border-bottom:1px solid var(--border); padding:12px 20px; display:flex; align-items:center; gap:12px; }
+        .nav-back { font-size:20px; cursor:pointer; color:var(--text-secondary); padding:4px 8px; border-radius:var(--radius-sm); transition:all 0.2s; }
+        .nav-back:hover { background:var(--bg-tertiary); color:var(--text-primary); }
+        .nav-title { font-size:18px; font-weight:600; flex:1; }
+        .nav-count { font-size:13px; color:var(--text-muted); font-weight:400; }
+
+        .sidebar { position:fixed; top:57px; left:0; bottom:0; width:220px; background:var(--bg-secondary); border-right:1px solid var(--border); padding:16px 0; overflow-y:auto; z-index:50; }
+        .sidebar-item { display:flex; align-items:center; gap:12px; padding:12px 20px; color:var(--text-secondary); font-size:14px; transition:all 0.2s; cursor:pointer; border-left:3px solid transparent; }
+        .sidebar-item:hover { background:rgba(99,102,241,0.08); color:var(--text-primary); }
+        .sidebar-item.active { color:var(--accent-primary); background:rgba(99,102,241,0.1); border-left-color:var(--accent-primary); }
+        .sidebar-item .icon { width:20px; text-align:center; font-size:16px; }
+        .sidebar-divider { height:1px; background:var(--border); margin:8px 16px; }
+        .sidebar-label { padding:12px 20px 4px; font-size:11px; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; }
+
+        .main-content { margin-left:220px; margin-top:57px; padding:24px; min-height:calc(100vh - 57px); }
+
+        /* ==================== 搜索栏 ==================== */
+        .search-bar { display:flex; gap:12px; margin-bottom:20px; }
+        .search-box { flex:1; display:flex; align-items:center; background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-md); padding:0 14px; }
+        .search-box .icon { color:var(--text-muted); margin-right:8px; }
+        .search-box input { flex:1; background:none; border:none; padding:10px 0; color:var(--text-primary); font-size:14px; outline:none; }
+        .search-box input::placeholder { color:var(--text-muted); }
+
+        /* ==================== 统计 ==================== */
+        .stats-row { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:20px; }
+        .stat-box { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-md); padding:14px 16px; text-align:center; }
+        .stat-box .num { font-size:24px; font-weight:700; color:var(--accent-primary); }
+        .stat-box .label { font-size:12px; color:var(--text-muted); margin-top:2px; }
+
+        /* ==================== 客户卡片列表 ==================== */
+        .client-list { display:flex; flex-direction:column; gap:10px; }
+        .client-card {
+            background:var(--bg-card); border:1px solid var(--border);
+            border-radius:var(--radius-md); padding:16px 18px;
+            display:flex; align-items:center; gap:14px; cursor:pointer;
+            transition:all 0.3s;
+        }
+        .client-card:hover { border-color:var(--accent-primary); box-shadow:var(--shadow-glow); transform:translateY(-1px); }
+        .client-avatar {
+            width:44px; height:44px; border-radius:50%;
+            background:linear-gradient(135deg,var(--accent-primary),var(--accent-secondary));
+            display:flex; align-items:center; justify-content:center;
+            font-size:18px; font-weight:600; color:white; flex-shrink:0;
+        }
+        .client-info { flex:1; min-width:0; }
+        .client-name { font-size:15px; font-weight:600; display:flex; align-items:center; gap:8px; }
+        .client-tag { font-size:10px; padding:1px 8px; border-radius:8px; }
+        .client-tag.opponent { background:rgba(245,158,11,0.15); color:var(--warning); }
+        .client-tag.client { background:rgba(34,197,94,0.15); color:var(--success); }
+        .client-meta { font-size:12px; color:var(--text-muted); margin-top:4px; display:flex; gap:12px; flex-wrap:wrap; }
+        .client-meta span { display:flex; align-items:center; gap:3px; }
+
+        .empty-state { text-align:center; padding:60px 20px; color:var(--text-muted); }
+        .empty-state .empty-icon { font-size:48px; margin-bottom:8px; }
+
+        .toast { position:fixed; bottom:40px; left:50%; transform:translateX(-50%); background:var(--bg-tertiary); border:1px solid var(--border); border-radius:var(--radius-md); padding:12px 24px; font-size:14px; color:var(--text-primary); box-shadow:var(--shadow-card); z-index:300; opacity:0; transition:opacity 0.3s; pointer-events:none; }
+        .toast.show { opacity:1; }
+
+        @media (max-width:768px) {
+            .sidebar { display:none; }
+            .main-content { margin-left:0; padding:16px; }
+            .stats-row { grid-template-columns:repeat(3,1fr); gap:8px; }
+            .stat-box .num { font-size:20px; }
+        }
+    </style>
+</head>
+<body>
+
+<nav class="nav-bar">
+    <a class="nav-back" href="/lawyer/dashboard.html">←</a>
+    <div class="nav-title">👥 客户管理</div>
+    <span class="nav-count" id="totalCount"></span>
+</nav>
+
+<aside class="sidebar">
+    <div class="sidebar-label">律师工具</div>
+    <a class="sidebar-item" href="/lawyer/dashboard.html"><span class="icon">📊</span> 工作台</a>
+    <a class="sidebar-item" href="/lawyer/cases.html"><span class="icon">📋</span> 案件管理</a>
+    <a class="sidebar-item" href="/lawyer/schedule.html"><span class="icon">📅</span> 日程管理</a>
+    <a class="sidebar-item" href="/lawyer/income.html"><span class="icon">💰</span> 收益中心</a>
+    <a class="sidebar-item active" href="/lawyer/clients.html"><span class="icon">👥</span> 客户管理</a>
+    <a class="sidebar-item" href="/lawyer/ai-tools.html"><span class="icon">🤖</span> AI工具台</a>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-label">系统</div>
+    <a class="sidebar-item" href="/index.html"><span class="icon">🏠</span> 返回首页</a>
+</aside>
+
+<main class="main-content">
+    <!-- 搜索 -->
+    <div class="search-bar">
+        <div class="search-box">
+            <span class="icon">🔍</span>
+            <input type="text" id="searchInput" placeholder="搜索客户姓名..." oninput="onSearch()">
+        </div>
+    </div>
+
+    <!-- 统计 -->
+    <div class="stats-row" id="statsRow">
+        <div class="stat-box"><div class="num" id="totalClients">-</div><div class="label">总客户</div></div>
+        <div class="stat-box"><div class="num" id="totalOpponents">-</div><div class="label">当事人</div></div>
+        <div class="stat-box"><div class="num" id="totalEntrust">-</div><div class="label">委托客户</div></div>
+    </div>
+
+    <!-- 客户列表 -->
+    <div id="clientListArea">
+        <div class="empty-state"><div class="empty-icon">👥</div><div>加载中...</div></div>
+    </div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API_BASE = window.location.origin + '/api';
+const USER_KEY = 'xinclaw_lawyer_user';
+
+function getUser() {
+    try { return JSON.parse(localStorage.getItem(USER_KEY) || sessionStorage.getItem(USER_KEY) || '{}'); }
+    catch(e) { return {}; }
+}
+function showToast(msg) {
+    const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
+    clearTimeout(t._timer); t._timer=setTimeout(()=>t.classList.remove('show'),2500);
+}
+function getInitial(name) { return name ? name.charAt(0) : '客'; }
+
+let searchTimer = null;
+
+async function loadClients() {
+    try {
+        const user = getUser();
+        const uid = user.user_id || 1;
+        const keyword = document.getElementById('searchInput').value.trim();
+
+        let url = `${API_BASE}/lawyer/clients?lawyer_id=${uid}`;
+        if (keyword) url += `&keyword=${encodeURIComponent(keyword)}`;
+
+        const res = await fetch(url);
+        const result = await res.json();
+        if (result.code !== 200) throw new Error(result.message);
+
+        const items = result.data.list || [];
+        renderClients(items);
+    } catch (e) {
+        document.getElementById('clientListArea').innerHTML = `
+            <div class="empty-state"><div class="empty-icon">⚠️</div><div>${e.message}</div>
+            <button onclick="loadClients()" style="margin-top:12px;padding:8px 20px;border-radius:8px;border:1px solid var(--border);background:var(--bg-card);color:var(--text-primary);cursor:pointer;">重试</button></div>`;
+    }
+}
+
+function renderClients(items) {
+    const total = items.length;
+    const opponents = items.filter(c => c.source === '案件当事人').length;
+    const entrusts = items.filter(c => c.source === '委托客户' || c.source === '案件客户').length;
+
+    document.getElementById('totalClients').textContent = total;
+    document.getElementById('totalOpponents').textContent = opponents;
+    document.getElementById('totalEntrust').textContent = entrusts;
+    document.getElementById('totalCount').textContent = `共${total}人`;
+
+    const area = document.getElementById('clientListArea');
+
+    if (total === 0) {
+        area.innerHTML = '<div class="empty-state"><div class="empty-icon">👥</div><div>暂无客户数据</div></div>';
+        return;
+    }
+
+    area.innerHTML = '<div class="client-list">' + items.map(c => {
+        const tagClass = c.source === '案件当事人' ? 'opponent' : 'client';
+        const tagLabel = c.source === '案件当事人' ? '当事人' : '客户';
+        const types = c.case_types ? c.case_types.split(',').map(t => {
+            const m = {'contract':'合同','divorce':'离婚','labor':'劳动','ip':'知识产权','criminal':'刑事','civil':'民事','admin':'行政','other':'其他'};
+            return m[t] || t;
+        }).filter((v,i,a)=>a.indexOf(v)===i).join('、') : '-';
+        const time = c.last_contact ? c.last_contact.substring(0,10) : '-';
+
+        return `<div class="client-card" onclick="showToast('👤 ${c.name}：${c.case_count}件案件')">
+            <div class="client-avatar">${getInitial(c.name)}</div>
+            <div class="client-info">
+                <div class="client-name">
+                    ${c.name}
+                    <span class="client-tag ${tagClass}">${tagLabel}</span>
+                </div>
+                <div class="client-meta">
+                    <span>📋 ${c.case_count}件案件</span>
+                    <span>🏷 ${types}</span>
+                    <span>📅 ${time}</span>
+                </div>
+            </div>
+        </div>`;
+    }).join('') + '</div>';
+}
+
+function onSearch() {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(loadClients, 300);
+}
+
+loadClients();
+</script>
+</body>
+</html>
