@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>日程管理 - 心海法律AI</title>
+    <style>
+        :root {
+            --bg-primary: #0a0e1a; --bg-secondary: #131825; --bg-tertiary: #1e2438;
+            --bg-card: #1a1f2e; --border: #2a3148;
+            --accent-primary: #6366f1; --accent-secondary: #8b5cf6; --accent-hover: #818cf8;
+            --text-primary: #e8eaed; --text-secondary: #94a3b8; --text-muted: #64748b;
+            --success: #22c55e; --warning: #f59e0b; --error: #ef4444;
+            --radius-sm: 8px; --radius-md: 12px; --radius-lg: 16px; --radius-xl: 24px;
+            --shadow-card: 0 4px 20px rgba(0,0,0,0.3); --shadow-glow: 0 0 30px rgba(99,102,241,0.15);
+            --font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:var(--font-family); background:var(--bg-primary); color:var(--text-primary); min-height:100vh; line-height:1.5; }
+        a { color:inherit; text-decoration:none; }
+
+        .nav-bar { position:fixed; top:0; left:0; right:0; z-index:100; background:rgba(10,14,26,0.92); backdrop-filter:blur(20px); border-bottom:1px solid var(--border); padding:12px 20px; display:flex; align-items:center; gap:12px; }
+        .nav-back { font-size:20px; cursor:pointer; color:var(--text-secondary); padding:4px 8px; border-radius:var(--radius-sm); transition:all 0.2s; }
+        .nav-back:hover { background:var(--bg-tertiary); color:var(--text-primary); }
+        .nav-title { font-size:18px; font-weight:600; flex:1; }
+
+        .sidebar { position:fixed; top:57px; left:0; bottom:0; width:220px; background:var(--bg-secondary); border-right:1px solid var(--border); padding:16px 0; overflow-y:auto; z-index:50; }
+        .sidebar-item { display:flex; align-items:center; gap:12px; padding:12px 20px; color:var(--text-secondary); font-size:14px; transition:all 0.2s; cursor:pointer; border-left:3px solid transparent; }
+        .sidebar-item:hover { background:rgba(99,102,241,0.08); color:var(--text-primary); }
+        .sidebar-item.active { color:var(--accent-primary); background:rgba(99,102,241,0.1); border-left-color:var(--accent-primary); }
+        .sidebar-item .icon { width:20px; text-align:center; font-size:16px; }
+        .sidebar-divider { height:1px; background:var(--border); margin:8px 16px; }
+        .sidebar-label { padding:12px 20px 4px; font-size:11px; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; }
+
+        .main-content { margin-left:220px; margin-top:57px; padding:24px; min-height:calc(100vh - 57px); }
+
+        /* ==================== 日历头部 ==================== */
+        .schedule-header {
+            display:flex; align-items:center; justify-content:space-between;
+            margin-bottom:20px; flex-wrap:wrap; gap:12px;
+        }
+        .schedule-nav { display:flex; align-items:center; gap:8px; }
+        .schedule-nav button {
+            width:36px; height:36px; border-radius:var(--radius-sm);
+            border:1px solid var(--border); background:var(--bg-card);
+            color:var(--text-primary); font-size:16px; cursor:pointer;
+            display:flex; align-items:center; justify-content:center; transition:all 0.2s;
+        }
+        .schedule-nav button:hover { border-color:var(--accent-primary); }
+        .schedule-month { font-size:20px; font-weight:600; min-width:140px; text-align:center; }
+        .schedule-actions { display:flex; gap:8px; }
+        .schedule-actions button {
+            padding:8px 18px; border-radius:var(--radius-sm);
+            font-size:13px; cursor:pointer; transition:all 0.3s;
+        }
+        .btn-add { background:var(--accent-primary); color:white; border:none; }
+        .btn-add:hover { background:var(--accent-hover); }
+        .btn-today { background:var(--bg-card); color:var(--text-primary); border:1px solid var(--border); }
+        .btn-today:hover { border-color:var(--accent-primary); }
+
+        /* ==================== 日期网格 ==================== */
+        .weekday-header {
+            display:grid; grid-template-columns:repeat(7,1fr); gap:4px;
+            margin-bottom:8px; text-align:center;
+        }
+        .weekday-header span { font-size:12px; color:var(--text-muted); padding:8px 0; }
+        .days-grid {
+            display:grid; grid-template-columns:repeat(7,1fr); gap:4px;
+            margin-bottom:24px;
+        }
+        .day-cell {
+            aspect-ratio:1; border-radius:var(--radius-sm);
+            display:flex; flex-direction:column; align-items:center; justify-content:center;
+            font-size:14px; cursor:pointer; transition:all 0.2s;
+            background:transparent; border:1px solid transparent;
+            position:relative; min-height:60px;
+        }
+        .day-cell:hover { background:var(--bg-tertiary); }
+        .day-cell.other-month { color:var(--text-muted); opacity:0.4; }
+        .day-cell.today { border-color:var(--accent-primary); }
+        .day-cell.active { background:var(--accent-primary); color:white; }
+        .day-cell .day-dot {
+            width:6px; height:6px; border-radius:50%;
+            background:var(--accent-primary); margin-top:2px;
+        }
+        .day-cell .day-num { line-height:1; }
+        .day-cell .day-count { font-size:10px; color:var(--text-muted); }
+
+        /* ==================== 日程列表 ==================== */
+        .schedule-list { }
+        .schedule-list-title {
+            font-size:16px; font-weight:600; margin-bottom:12px;
+            display:flex; align-items:center; gap:8px;
+        }
+        .schedule-list-title .count { font-size:13px; color:var(--text-muted); font-weight:400; }
+
+        .schedule-card {
+            background:var(--bg-card); border:1px solid var(--border);
+            border-radius:var(--radius-md); padding:14px 18px;
+            margin-bottom:10px; transition:all 0.3s;
+            display:flex; align-items:center; gap:14px;
+        }
+        .schedule-card:hover { border-color:var(--accent-primary); box-shadow:var(--shadow-glow); }
+        .schedule-time-box {
+            text-align:center; min-width:48px; flex-shrink:0;
+        }
+        .schedule-time-box .hour { font-size:18px; font-weight:700; color:var(--accent-primary); line-height:1; }
+        .schedule-time-box .ampm { font-size:11px; color:var(--text-muted); }
+        .schedule-card-info { flex:1; min-width:0; }
+        .schedule-card-title { font-size:14px; font-weight:500; }
+        .schedule-card-desc { font-size:12px; color:var(--text-muted); margin-top:2px; }
+        .schedule-card-type {
+            font-size:11px; padding:2px 10px; border-radius:10px; flex-shrink:0;
+        }
+        .schedule-card-type.court { background:rgba(99,102,241,0.15); color:var(--accent-primary); }
+        .schedule-card-type.meeting { background:rgba(34,197,94,0.15); color:var(--success); }
+        .schedule-card-type.deadline { background:rgba(239,68,68,0.15); color:var(--error); }
+        .schedule-card-type.appointment { background:rgba(245,158,11,0.15); color:var(--warning); }
+        .schedule-card-type.other { background:rgba(107,114,128,0.15); color:var(--text-muted); }
+
+        .schedule-card-actions { display:flex; gap:4px; flex-shrink:0; }
+        .schedule-card-actions button {
+            width:28px; height:28px; border-radius:var(--radius-sm);
+            border:1px solid var(--border); background:transparent;
+            color:var(--text-muted); cursor:pointer; font-size:14px;
+            display:flex; align-items:center; justify-content:center; transition:all 0.2s;
+        }
+        .schedule-card-actions button:hover { border-color:var(--error); color:var(--error); }
+
+        .schedule-empty { text-align:center; padding:40px 20px; color:var(--text-muted); }
+        .schedule-empty .empty-icon { font-size:40px; margin-bottom:8px; }
+
+        .loading-state { text-align:center; padding:60px 20px; color:var(--text-muted); }
+        .loading-state .spinner {
+            width:36px; height:36px; border:3px solid var(--border);
+            border-top-color:var(--accent-primary); border-radius:50%;
+            animation:spin 0.8s linear infinite; margin:0 auto 12px;
+        }
+        @keyframes spin { to { transform:rotate(360deg); } }
+
+        /* ==================== 弹窗 ==================== */
+        .modal-overlay {
+            position:fixed; top:0; left:0; right:0; bottom:0;
+            background:rgba(0,0,0,0.6); z-index:200;
+            display:none; align-items:center; justify-content:center; padding:20px;
+        }
+        .modal-overlay.show { display:flex; }
+        .modal-panel {
+            background:var(--bg-secondary); border:1px solid var(--border);
+            border-radius:var(--radius-xl); width:100%; max-width:480px;
+            padding:28px; box-shadow:0 20px 60px rgba(0,0,0,0.5);
+        }
+        .modal-title { font-size:18px; font-weight:600; margin-bottom:20px; display:flex; align-items:center; gap:8px; }
+        .modal-field { margin-bottom:16px; }
+        .modal-field label { display:block; font-size:13px; color:var(--text-secondary); margin-bottom:6px; }
+        .modal-field input, .modal-field select, .modal-field textarea {
+            width:100%; padding:10px 14px; background:var(--bg-card);
+            border:1px solid var(--border); border-radius:var(--radius-sm);
+            color:var(--text-primary); font-size:14px; outline:none;
+        }
+        .modal-field input:focus, .modal-field select:focus, .modal-field textarea:focus { border-color:var(--accent-primary); }
+        .modal-field textarea { min-height:80px; resize:vertical; }
+        .modal-actions { display:flex; gap:12px; margin-top:20px; }
+        .modal-actions button {
+            flex:1; padding:10px; border-radius:var(--radius-sm);
+            font-size:14px; cursor:pointer; transition:all 0.2s;
+        }
+        .btn-cancel { border:1px solid var(--border); background:var(--bg-card); color:var(--text-secondary); }
+        .btn-cancel:hover { color:var(--text-primary); }
+        .btn-confirm { border:none; background:var(--accent-primary); color:white; }
+        .btn-confirm:hover { background:var(--accent-hover); }
+        .btn-confirm:disabled { opacity:0.5; cursor:not-allowed; }
+        .btn-danger { border:1px solid var(--error); background:transparent; color:var(--error); }
+        .btn-danger:hover { background:rgba(239,68,68,0.1); }
+
+        .toast { position:fixed; bottom:40px; left:50%; transform:translateX(-50%); background:var(--bg-tertiary); border:1px solid var(--border); border-radius:var(--radius-md); padding:12px 24px; font-size:14px; color:var(--text-primary); box-shadow:var(--shadow-card); z-index:300; opacity:0; transition:opacity 0.3s; pointer-events:none; }
+        .toast.show { opacity:1; }
+
+        @media (max-width:768px) {
+            .sidebar { display:none; }
+            .main-content { margin-left:0; padding:16px; }
+            .schedule-header { flex-direction:column; align-items:stretch; }
+            .schedule-nav { justify-content:center; }
+            .schedule-actions { justify-content:center; }
+            .day-cell { min-height:44px; font-size:12px; }
+            .modal-panel { border-radius:var(--radius-lg); padding:20px; }
+        }
+    </style>
+</head>
+<body>
+
+<nav class="nav-bar">
+    <a class="nav-back" href="/lawyer/dashboard.html">←</a>
+    <div class="nav-title">📅 日程管理</div>
+</nav>
+
+<aside class="sidebar">
+    <div class="sidebar-label">律师工具</div>
+    <a class="sidebar-item" href="/lawyer/dashboard.html"><span class="icon">📊</span> 工作台</a>
+    <a class="sidebar-item" href="/lawyer/cases.html"><span class="icon">📋</span> 案件管理</a>
+    <a class="sidebar-item active" href="/lawyer/schedule.html"><span class="icon">📅</span> 日程管理</a>
+    <a class="sidebar-item" href="/lawyer/income.html"><span class="icon">💰</span> 收益中心</a>
+    <a class="sidebar-item" href="/lawyer/clients.html"><span class="icon">👥</span> 客户管理</a>
+    <a class="sidebar-item" href="/lawyer/ai-tools.html"><span class="icon">🤖</span> AI工具台</a>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-label">系统</div>
+    <a class="sidebar-item" href="/index.html"><span class="icon">🏠</span> 返回首页</a>
+</aside>
+
+<main class="main-content">
+    <!-- 头部 -->
+    <div class="schedule-header">
+        <div class="schedule-nav">
+            <button onclick="changeMonth(-1)">‹</button>
+            <span class="schedule-month" id="currentMonth">2026年5月</span>
+            <button onclick="changeMonth(1)">›</button>
+        </div>
+        <div class="schedule-actions">
+            <button class="btn-today" onclick="goToday()">今天</button>
+            <button class="btn-add" onclick="openAdd()">＋ 新增日程</button>
+        </div>
+    </div>
+
+    <!-- 星期头 -->
+    <div class="weekday-header">
+        <span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>
+    </div>
+
+    <!-- 日期网格 -->
+    <div class="days-grid" id="daysGrid"></div>
+
+    <!-- 日程列表 -->
+    <div class="schedule-list" id="scheduleList">
+        <div class="schedule-list-title">📋 当天日程 <span class="count" id="scheduleCount"></span></div>
+        <div class="loading-state"><div class="spinner"></div></div>
+    </div>
+</main>
+
+<!-- 新增/编辑弹窗 -->
+<div class="modal-overlay" id="scheduleModal">
+    <div class="modal-panel">
+        <div class="modal-title" id="modalTitle">📅 新增日程</div>
+        <div class="modal-body">
+            <div class="modal-field">
+                <label>日程类型</label>
+                <select id="sEventType">
+                    <option value="court">开庭</option>
+                    <option value="meeting">会议</option>
+                    <option value="deadline">截止日期</option>
+                    <option value="appointment">约见客户</option>
+                    <option value="other">其他</option>
+                </select>
+            </div>
+            <div class="modal-field">
+                <label>日期时间</label>
+                <input type="datetime-local" id="sEventTime">
+            </div>
+            <div class="modal-field">
+                <label>内容</label>
+                <textarea id="sContent" placeholder="日程内容描述"></textarea>
+            </div>
+            <div class="modal-field">
+                <label>关联案件ID（选填）</label>
+                <input type="number" id="sCaseId" placeholder="案件编号">
+            </div>
+            <div style="display:none;" id="deleteArea">
+                <button class="btn-danger" style="width:100%;padding:10px;" onclick="deleteSchedule()">🗑 删除此日程</button>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="closeModal()">取消</button>
+                <button class="btn-confirm" id="saveBtn" onclick="saveSchedule()">保存</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 确认删除弹窗 -->
+<div class="modal-overlay" id="confirmModal">
+    <div class="modal-panel" style="max-width:360px;">
+        <div class="modal-title">⚠️ 确认删除</div>
+        <div style="color:var(--text-secondary);font-size:14px;margin-bottom:20px;">确定要删除此日程吗？此操作不可撤销。</div>
+        <div class="modal-actions">
+            <button class="btn-cancel" onclick="document.getElementById('confirmModal').classList.remove('show')">取消</button>
+            <button class="btn-danger" id="confirmDeleteBtn" onclick="confirmDelete()">确认删除</button>
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API_BASE = window.location.origin + '/api';
+const USER_KEY = 'xinclaw_lawyer_user';
+
+let currentYear = new Date().getFullYear();
+let currentMonth = new Date().getMonth();
+let selectedDate = new Date();
+let schedulesCache = [];
+let editingId = null;
+let deletingId = null;
+
+const typeLabels = { 'court':'开庭','meeting':'会议','deadline':'截止日期','appointment':'约见客户','other':'其他' };
+
+function getUser() {
+    try { return JSON.parse(localStorage.getItem(USER_KEY) || sessionStorage.getItem(USER_KEY) || '{}'); }
+    catch(e) { return {}; }
+}
+function showToast(msg) {
+    const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
+    clearTimeout(t._timer); t._timer=setTimeout(()=>t.classList.remove('show'),2500);
+}
+function pad(n){return String(n).padStart(2,'0')}
+
+// ==================== 日期计算 ====================
+function getMonthDays(y,m){return new Date(y,m+1,0).getDate()}
+function getFirstDay(y,m){return new Date(y,m,1).getDay()}
+function formatDate(d){return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`}
+function formatTime(iso){
+    if(!iso) return '-';
+    try{
+        const parts=iso.split(' ');
+        if(parts.length<2) return iso;
+        const t=parts[1].split(':');
+        return {hour:t[0]+':'+t[1], ampm:parseInt(t[0])<12?'上午':'下午'};
+    }catch(e){return {hour:iso,hour:''}}
+}
+
+// ==================== 渲染日历 ====================
+function renderCalendar(){
+    const grid=document.getElementById('daysGrid');
+    document.getElementById('currentMonth').textContent=`${currentYear}年${currentMonth+1}月`;
+
+    const days=getMonthDays(currentYear,currentMonth);
+    const firstDay=getFirstDay(currentYear,currentMonth);
+    const prevDays=getMonthDays(currentYear,currentMonth-1);
+
+    const today=new Date();
+    const todayStr=formatDate(today);
+
+    // 收集有日程的日期
+    const hasSchedule={};
+    schedulesCache.forEach(s=>{
+        const d=s.event_time? s.event_time.substring(0,10):'';
+        if(d) hasSchedule[d]=(hasSchedule[d]||0)+1;
+    });
+
+    let html='';
+    // 上月补齐
+    for(let i=prevDays-firstDay+1; i<=prevDays; i++)
+        html+=`<div class="day-cell other-month"><span class="day-num">${i}</span></div>`;
+
+    // 本月
+    for(let d=1; d<=days; d++){
+        const dateStr=`${currentYear}-${pad(currentMonth+1)}-${pad(d)}`;
+        const isToday=dateStr===todayStr;
+        const isActive=dateStr===formatDate(selectedDate);
+        const count=hasSchedule[dateStr]||0;
+        html+=`<div class="day-cell ${isToday?'today':''} ${isActive?'active':''}" onclick="selectDate(${d})">
+            <span class="day-num">${d}</span>
+            ${count>0?`<span class="day-dot"></span>`:''}
+        </div>`;
+    }
+
+    // 下月补齐
+    const totalCells=firstDay+days;
+    const remaining=totalCells%7===0?0:7-(totalCells%7);
+    for(let i=1; i<=remaining; i++)
+        html+=`<div class="day-cell other-month"><span class="day-num">${i}</span></div>`;
+
+    grid.innerHTML=html;
+    loadSchedulesForDate();
+}
+
+// ==================== 选择日期 ====================
+function selectDate(d){
+    selectedDate=new Date(currentYear,currentMonth,d);
+    renderCalendar();
+}
+
+function changeMonth(delta){
+    currentMonth+=delta;
+    if(currentMonth>11){currentMonth=0; currentYear++;}
+    if(currentMonth<0){currentMonth=11; currentYear--;}
+    renderCalendar();
+    loadAllSchedules();
+}
+
+function goToday(){
+    const t=new Date();
+    currentYear=t.getFullYear(); currentMonth=t.getMonth();
+    selectedDate=t;
+    renderCalendar();
+    loadAllSchedules();
+}
+
+// ==================== 加载日程 ====================
+async function loadAllSchedules(){
+    try{
+        const user=getUser();
+        const uid=user.user_id||1;
+        const res=await fetch(`${API_BASE}/lawyer/schedules?lawyer_id=${uid}&month=${currentYear}-${pad(currentMonth+1)}`);
+        const result=await res.json();
+        if(result.code!==200) throw new Error(result.message);
+        schedulesCache=result.data.list||[];
+        renderCalendar();
+    }catch(e){
+        showToast('加载失败: '+e.message);
+    }
+}
+
+async function loadSchedulesForDate(){
+    const el=document.getElementById('scheduleList');
+    const dateStr=formatDate(selectedDate);
+
+    const daySchedules=schedulesCache.filter(s=>{
+        const d=s.event_time?s.event_time.substring(0,10):'';
+        return d===dateStr;
+    });
+
+    document.getElementById('scheduleCount').textContent=`(${daySchedules.length}项)`;
+
+    if(daySchedules.length===0){
+        el.innerHTML=`<div class="schedule-list-title">📋 ${dateStr} 日程 <span class="count" id="scheduleCount">(0项)</span></div>
+        <div class="schedule-empty"><div class="empty-icon">📅</div><div>当天暂无日程</div></div>`;
+        return;
+    }
+
+    el.innerHTML=`<div class="schedule-list-title">📋 ${dateStr} 日程 <span class="count">(${daySchedules.length}项)</span></div>`+
+    daySchedules.map(s=>{
+        const t=formatTime(s.event_time);
+        const type=s.event_type||'other';
+        return `<div class="schedule-card">
+            <div class="schedule-time-box">
+                <div class="hour">${t.hour}</div>
+                <div class="ampm">${t.ampm}</div>
+            </div>
+            <div class="schedule-card-info">
+                <div class="schedule-card-title">${s.content||'未命名'}</div>
+                <div class="schedule-card-desc">${s.case_id?'关联案件 #'+s.case_id:''}</div>
+            </div>
+            <span class="schedule-card-type ${type}">${typeLabels[type]||type}</span>
+            <div class="schedule-card-actions">
+                <button onclick="editSchedule(${s.id})" title="编辑">✏️</button>
+                <button onclick="openDelete(${s.id})" title="删除">🗑</button>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+// ==================== 新增/编辑 ====================
+function openAdd(){
+    editingId=null;
+    document.getElementById('modalTitle').textContent='📅 新增日程';
+    document.getElementById('sEventType').value='court';
+    document.getElementById('sEventTime').value=formatDate(selectedDate)+'T09:00';
+    document.getElementById('sContent').value='';
+    document.getElementById('sCaseId').value='';
+    document.getElementById('deleteArea').style.display='none';
+    document.getElementById('saveBtn').textContent='保存';
+    document.getElementById('scheduleModal').classList.add('show');
+}
+
+function editSchedule(id){
+    const s=schedulesCache.find(x=>x.id===id);
+    if(!s){showToast('日程不存在'); return;}
+    editingId=id;
+    document.getElementById('modalTitle').textContent='✏️ 编辑日程';
+    document.getElementById('sEventType').value=s.event_type||'other';
+    const dt=s.event_time?s.event_time.replace(' ','T'):'';
+    document.getElementById('sEventTime').value=dt;
+    document.getElementById('sContent').value=s.content||'';
+    document.getElementById('sCaseId').value=s.case_id||'';
+    document.getElementById('deleteArea').style.display='block';
+    document.getElementById('saveBtn').textContent='保存修改';
+    document.getElementById('scheduleModal').classList.add('show');
+}
+
+function closeModal(){
+    document.getElementById('scheduleModal').classList.remove('show');
+}
+
+async function saveSchedule(){
+    const btn=document.getElementById('saveBtn');
+    btn.disabled=true; btn.textContent='保存中...';
+
+    try{
+        const user=getUser(); const uid=user.user_id||1;
+        const eventType=document.getElementById('sEventType').value;
+        const eventTime=document.getElementById('sEventTime').value.replace('T',' ');
+        const content=document.getElementById('sContent').value.trim();
+        const caseId=document.getElementById('sCaseId').value;
+
+        if(!content){showToast('请输入内容'); btn.disabled=false; btn.textContent='保存'; return;}
+
+        const body={lawyer_id:uid, event_type:eventType, event_time:eventTime, content:content};
+        if(caseId) body.case_id=parseInt(caseId);
+
+        const res=await fetch(`${API_BASE}/lawyer/schedules`,{
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify(body)
+        });
+        const result=await res.json();
+
+        if(result.code!==200) throw new Error(result.message||'保存失败');
+
+        showToast(editingId?'✅ 已更新':'✅ 已创建');
+        closeModal();
+        loadAllSchedules();
+    }catch(e){
+        showToast('❌ '+e.message);
+    }finally{
+        btn.disabled=false; btn.textContent=editingId?'保存修改':'保存';
+    }
+}
+
+// ==================== 删除 ====================
+function openDelete(id){
+    deletingId=id;
+    document.getElementById('confirmModal').classList.add('show');
+}
+
+async function confirmDelete(){
+    const btn=document.getElementById('confirmDeleteBtn');
+    btn.disabled=true; btn.textContent='删除中...';
+
+    try{
+        const res=await fetch(`${API_BASE}/lawyer/schedules/delete`,{
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({id:deletingId})
+        });
+        const result=await res.json();
+
+        if(result.code!==200) throw new Error(result.message||'删除失败');
+
+        showToast('✅ 已删除');
+        document.getElementById('confirmModal').classList.remove('show');
+        closeModal();
+        loadAllSchedules();
+    }catch(e){
+        showToast('❌ '+e.message);
+    }finally{
+        btn.disabled=false; btn.textContent='确认删除';
+    }
+}
+
+// ==================== 初始化 ====================
+document.getElementById('scheduleModal').addEventListener('click',function(e){
+    if(e.target===this) closeModal();
+});
+document.getElementById('confirmModal').addEventListener('click',function(e){
+    if(e.target===this) this.classList.remove('show');
+});
+
+loadAllSchedules();
+</script>
+</body>
+</html>

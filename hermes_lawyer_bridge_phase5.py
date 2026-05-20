@@ -99,6 +99,30 @@ def schedules_create(body_str):
     return json_response(data={"schedule_id": schedule_id, "created_at": now})
 
 
+def schedules_delete(body_str):
+    """删除日程"""
+    try:
+        body = json.loads(body_str) if body_str else {}
+    except:
+        return json_response(400, "请求参数格式错误")
+    
+    schedule_id = body.get("id")
+    if not schedule_id:
+        return json_response(400, "缺少必填参数：id")
+    
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM lawyer_schedules WHERE id = ?", (schedule_id,))
+    conn.commit()
+    deleted = cursor.rowcount
+    conn.close()
+    
+    if deleted == 0:
+        return json_response(404, "日程不存在")
+    
+    return json_response(data={"deleted_id": schedule_id, "deleted": deleted})
+
+
 if __name__ == "__main__":
     if len(sys.argv) < 3:
         print(json_response(400, "参数不足"))
@@ -111,5 +135,7 @@ if __name__ == "__main__":
         print(schedules_list(data_str))
     elif action == "schedules_create":
         print(schedules_create(data_str))
+    elif action == "schedules_delete":
+        print(schedules_delete(data_str))
     else:
         print(json_response(400, f"未知操作: {action}"))
