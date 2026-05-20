@@ -640,6 +640,86 @@ def handle_trial_outline(params):
     return handle_ai_tool_request(params, 'trial_outline', process)
 
 
+# ==================== 9. AI模拟法庭 ====================
+
+def handle_moot_court(params):
+    """POST /api/lawyer/ai/moot-court — AI模拟法庭"""
+    my_role = params.get('my_role', '原告')
+    case_type = params.get('case_type', '综合')
+    case_description = params.get('case_description', '')
+    my_claim = params.get('my_claim', '')
+
+    if not case_description:
+        return {'code': 400, 'message': '参数错误', 'data': {'error': '缺少 case_description'}}
+
+    def process(p, uid, pid):
+        prompt = PROMPT_MOOT_COURT.format(
+            my_role=my_role,
+            case_type=case_type,
+            case_description=case_description,
+            my_claim=my_claim or '无特定主张'
+        )
+        messages = [
+            {"role": "system", "content": "你是一名模拟法庭法官和资深出庭律师，擅长模拟庭审对抗。"},
+            {"role": "user", "content": prompt}
+        ]
+        result = call_llm(messages, temperature=0.3, max_tokens=3072)
+        try:
+            clean = result.strip().replace('```json', '').replace('```', '').strip()
+            data = json.loads(clean)
+            return data
+        except:
+            return {
+                'judge_questions': [{'question': result[:500], 'legal_basis': '模拟法庭结果'}],
+                'opponent_arguments': [],
+                'court_timeline': 'AI模拟完成'
+            }
+
+    return handle_ai_tool_request(params, 'moot_court', process)
+
+
+# ==================== 10. AI归档报告 ====================
+
+def handle_case_archive(params):
+    """POST /api/lawyer/ai/case-archive — AI归档报告"""
+    case_title = params.get('case_title', '')
+    case_type = params.get('case_type', '综合')
+    case_result = params.get('case_result', '')
+    case_process = params.get('case_process', '')
+    key_dates = params.get('key_dates', '')
+
+    if not case_title:
+        return {'code': 400, 'message': '参数错误', 'data': {'error': '缺少 case_title'}}
+
+    def process(p, uid, pid):
+        prompt = PROMPT_CASE_ARCHIVE.format(
+            case_title=case_title,
+            case_type=case_type,
+            case_result=case_result or '待补充',
+            case_process=case_process or '待补充',
+            key_dates=key_dates or '待补充'
+        )
+        messages = [
+            {"role": "system", "content": "你是一名结案归档律师，擅长整理结案报告和案例沉淀。"},
+            {"role": "user", "content": prompt}
+        ]
+        result = call_llm(messages, temperature=0.3, max_tokens=3072)
+        try:
+            clean = result.strip().replace('```json', '').replace('```', '').strip()
+            data = json.loads(clean)
+            return data
+        except:
+            return {
+                'archive_summary': result[:500],
+                'experience_summary': 'AI归档完成',
+                'legal_points': '',
+                'document_checklist': '',
+                'deidentify_version': result[:300]
+            }
+
+    return handle_ai_tool_request(params, 'case_archive', process)
+
+
 # ==================== 路由调度 ====================
 
 ACTION_MAP = {
@@ -652,6 +732,8 @@ ACTION_MAP = {
     'legal_search': handle_legal_search,
     'class_case': handle_class_case,
     'trial_outline': handle_trial_outline,
+    'moot_court': handle_moot_court,
+    'case_archive': handle_case_archive,
 }
 
 

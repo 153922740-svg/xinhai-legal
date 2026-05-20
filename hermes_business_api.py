@@ -568,6 +568,10 @@ class BusinessAPIHandler(BaseHTTPRequestHandler):
                 self._handle_bridge_lawyer_ai('class_case', body)
             elif p in ('/api/lawyer/ai/trial-outline',):
                 self._handle_bridge_lawyer_ai('trial_outline', body)
+            elif p in ('/api/lawyer/ai/moot-court',):
+                self._handle_bridge_lawyer_ai('moot_court', body)
+            elif p in ('/api/lawyer/ai/case-archive',):
+                self._handle_bridge_lawyer_ai('case_archive', body)
             # ========== 律师钱包模块 POST 路由 ==========
             elif p in ('/api/lawyer/wallet/withdraw', '/api/v1/lawyer/wallet/withdraw'):
                 self._handle_bridge_lawyer_wallet('withdraw', body)
