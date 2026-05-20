@@ -166,6 +166,15 @@ try:
 except Exception as e:
     print(f"⚠️ 推荐系统 API 未加载：{e}")
 
+# ============== 企业常法模块 ==============
+try:
+    from enterprise_api import enterprise_bp, enterprise_v1_bp
+    app.register_blueprint(enterprise_bp)
+    app.register_blueprint(enterprise_v1_bp)
+    print("✅ 企业常法 API 已注册（21个路由，含v1兼容）")
+except Exception as e:
+    print(f"⚠️ 企业常法 API 未加载：{e}")
+
 # ============== 律师板块 ==============
 try:
     from lawyer_blueprint import lawyer_bp, init_lawyer_module
