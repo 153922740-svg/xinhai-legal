@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AI工具台 - 心海法律AI</title>
+    <style>
+        :root {
+            --bg-primary: #0a0e1a; --bg-secondary: #131825; --bg-tertiary: #1e2438;
+            --bg-card: #1a1f2e; --border: #2a3148;
+            --accent-primary: #6366f1; --accent-secondary: #8b5cf6; --accent-hover: #818cf8;
+            --text-primary: #e8eaed; --text-secondary: #94a3b8; --text-muted: #64748b;
+            --success: #22c55e; --warning: #f59e0b; --error: #ef4444;
+            --radius-sm: 8px; --radius-md: 12px; --radius-lg: 16px; --radius-xl: 24px;
+            --shadow-card: 0 4px 20px rgba(0,0,0,0.3); --shadow-glow: 0 0 30px rgba(99,102,241,0.15);
+            --font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:var(--font-family); background:var(--bg-primary); color:var(--text-primary); min-height:100vh; line-height:1.5; }
+
+        .nav-bar { position:fixed; top:0; left:0; right:0; z-index:100; background:rgba(10,14,26,0.92); backdrop-filter:blur(20px); border-bottom:1px solid var(--border); padding:12px 20px; display:flex; align-items:center; gap:12px; }
+        .nav-back { font-size:20px; cursor:pointer; color:var(--text-secondary); padding:4px 8px; border-radius:var(--radius-sm); transition:all 0.2s; }
+        .nav-back:hover { background:var(--bg-tertiary); color:var(--text-primary); }
+        .nav-title { font-size:18px; font-weight:600; flex:1; }
+
+        .sidebar { position:fixed; top:57px; left:0; bottom:0; width:220px; background:var(--bg-secondary); border-right:1px solid var(--border); padding:16px 0; overflow-y:auto; z-index:50; }
+        .sidebar-item { display:flex; align-items:center; gap:12px; padding:12px 20px; color:var(--text-secondary); font-size:14px; transition:all 0.2s; cursor:pointer; border-left:3px solid transparent; }
+        .sidebar-item:hover { background:rgba(99,102,241,0.08); color:var(--text-primary); }
+        .sidebar-item.active { color:var(--accent-primary); background:rgba(99,102,241,0.1); border-left-color:var(--accent-primary); }
+        .sidebar-item .icon { width:20px; text-align:center; font-size:16px; }
+        .sidebar-divider { height:1px; background:var(--border); margin:8px 16px; }
+        .sidebar-label { padding:12px 20px 4px; font-size:11px; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; }
+
+        .main-content { margin-left:220px; margin-top:57px; padding:24px; min-height:calc(100vh - 57px); }
+
+        /* ==================== AI工具卡片网格 ==================== */
+        .tools-grid {
+            display:grid; grid-template-columns:repeat(3,1fr); gap:14px;
+            margin-bottom:24px;
+        }
+        .tool-card {
+            background:var(--bg-card); border:1px solid var(--border);
+            border-radius:var(--radius-md); padding:20px;
+            cursor:pointer; transition:all 0.3s;
+            display:flex; flex-direction:column; gap:10px;
+        }
+        .tool-card:hover { border-color:var(--accent-primary); box-shadow:var(--shadow-glow); transform:translateY(-2px); }
+        .tool-card .tool-icon { font-size:28px; }
+        .tool-card .tool-name { font-size:15px; font-weight:600; }
+        .tool-card .tool-desc { font-size:12px; color:var(--text-muted); line-height:1.5; }
+        .tool-card .tool-tag {
+            font-size:10px; padding:2px 8px; border-radius:8px;
+            align-self:flex-start;
+        }
+        .tool-tag.real { background:rgba(34,197,94,0.15); color:var(--success); }
+        .tool-tag.soon { background:rgba(245,158,11,0.15); color:var(--warning); }
+        .tool-card .tool-status {
+            font-size:11px; color:var(--text-muted); margin-top:auto;
+            display:flex; align-items:center; gap:4px;
+        }
+
+        /* ==================== 工具详情面板 ==================== */
+        .panel-container {
+            background:var(--bg-card); border:1px solid var(--border);
+            border-radius:var(--radius-md); overflow:hidden;
+        }
+        .panel-header {
+            display:flex; align-items:center; gap:12px;
+            padding:16px 20px; border-bottom:1px solid var(--border);
+        }
+        .panel-header .panel-icon { font-size:24px; }
+        .panel-header .panel-title { font-size:16px; font-weight:600; flex:1; }
+        .panel-body { padding:20px; }
+
+        .input-group { margin-bottom:16px; }
+        .input-group label { display:block; font-size:13px; color:var(--text-secondary); margin-bottom:6px; }
+        .input-group input, .input-group textarea, .input-group select {
+            width:100%; padding:10px 14px; background:var(--bg-secondary);
+            border:1px solid var(--border); border-radius:var(--radius-sm);
+            color:var(--text-primary); font-size:14px; outline:none;
+        }
+        .input-group input:focus, .input-group textarea:focus, .input-group select:focus { border-color:var(--accent-primary); }
+        .input-group textarea { min-height:80px; resize:vertical; }
+        .input-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+
+        .btn-submit {
+            width:100%; padding:12px; border:none; border-radius:var(--radius-sm);
+            background:linear-gradient(135deg,var(--accent-primary),var(--accent-secondary));
+            color:white; font-size:15px; font-weight:500; cursor:pointer;
+            transition:all 0.3s;
+        }
+        .btn-submit:hover { opacity:0.9; transform:translateY(-1px); }
+        .btn-submit:disabled { opacity:0.5; cursor:not-allowed; transform:none; }
+
+        /* ==================== 结果区 ==================== */
+        .result-area {
+            margin-top:16px; display:none;
+        }
+        .result-area.show { display:block; }
+        .result-box {
+            background:var(--bg-secondary); border:1px solid var(--border);
+            border-radius:var(--radius-sm); padding:16px;
+            font-size:14px; line-height:1.8; white-space:pre-wrap;
+            max-height:400px; overflow-y:auto;
+        }
+        .result-box.loading {
+            display:flex; align-items:center; justify-content:center; gap:8px;
+            color:var(--text-muted); min-height:60px;
+        }
+        .result-box .spinner-inline {
+            width:16px; height:16px; border:2px solid var(--border);
+            border-top-color:var(--accent-primary); border-radius:50%;
+            animation:spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform:rotate(360deg); } }
+        .copy-btn {
+            margin-top:8px; padding:6px 14px; border-radius:var(--radius-sm);
+            border:1px solid var(--border); background:transparent;
+            color:var(--text-secondary); cursor:pointer; font-size:12px; float:right;
+        }
+        .copy-btn:hover { border-color:var(--accent-primary); color:var(--accent-primary); }
+
+        .empty-state { text-align:center; padding:40px 20px; color:var(--text-muted); }
+        .empty-state .empty-icon { font-size:48px; margin-bottom:8px; }
+
+        .toast { position:fixed; bottom:40px; left:50%; transform:translateX(-50%); background:var(--bg-tertiary); border:1px solid var(--border); border-radius:var(--radius-md); padding:12px 24px; font-size:14px; color:var(--text-primary); box-shadow:var(--shadow-card); z-index:300; opacity:0; transition:opacity 0.3s; pointer-events:none; }
+        .toast.show { opacity:1; }
+
+        @media (max-width:1024px) {
+            .tools-grid { grid-template-columns:repeat(2,1fr); }
+        }
+        @media (max-width:768px) {
+            .sidebar { display:none; }
+            .main-content { margin-left:0; padding:16px; }
+            .tools-grid { grid-template-columns:1fr; }
+            .input-row { grid-template-columns:1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<nav class="nav-bar">
+    <a class="nav-back" href="/lawyer/dashboard.html">←</a>
+    <div class="nav-title">🤖 AI工具台</div>
+</nav>
+
+<aside class="sidebar">
+    <div class="sidebar-label">律师工具</div>
+    <a class="sidebar-item" href="/lawyer/dashboard.html"><span class="icon">📊</span> 工作台</a>
+    <a class="sidebar-item" href="/lawyer/cases.html"><span class="icon">📋</span> 案件管理</a>
+    <a class="sidebar-item" href="/lawyer/schedule.html"><span class="icon">📅</span> 日程管理</a>
+    <a class="sidebar-item" href="/lawyer/income.html"><span class="icon">💰</span> 收益中心</a>
+    <a class="sidebar-item" href="/lawyer/clients.html"><span class="icon">👥</span> 客户管理</a>
+    <a class="sidebar-item active" href="/lawyer/ai-tools.html"><span class="icon">🤖</span> AI工具台</a>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-label">系统</div>
+    <a class="sidebar-item" href="/index.html"><span class="icon">🏠</span> 返回首页</a>
+</aside>
+
+<main class="main-content">
+    <div class="loading-state" id="loadingState" style="display:none;">
+        <div class="spinner"></div><div>加载中...</div>
+    </div>
+
+    <div id="contentArea">
+        <!-- AI工具卡片网格 -->
+        <div class="tools-grid" id="toolsGrid"></div>
+
+        <!-- 工具操作面板 -->
+        <div class="panel-container" id="toolPanel" style="display:none;">
+            <div class="panel-header" id="panelHeader">
+                <span class="panel-icon" id="panelIcon">🤖</span>
+                <span class="panel-title" id="panelTitle">选择工具</span>
+                <button onclick="clearPanel()" style="background:none;border:none;color:var(--text-muted);font-size:18px;cursor:pointer;">✕</button>
+            </div>
+            <div class="panel-body" id="panelBody">
+                <div class="empty-state"><div class="empty-icon">👆</div><div>请选择一个AI工具开始使用</div></div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API_BASE = window.location.origin + '/api';
+const USER_KEY = 'xinclaw_lawyer_user';
+
+const tools = [
+    {id:'analyze', icon:'🔍', name:'AI谈单分析', tag:'real', tagText:'DeepSeek',
+     desc:'自动分析案情，评估胜率，提供诉讼策略建议',
+     fields:[
+         {key:'case_description', label:'案情描述', type:'textarea', placeholder:'请输入案件详细情况...'},
+         {key:'client_info', label:'当事人信息（JSON）', type:'textarea', placeholder:'{"name":"张三","age":35}'}
+    ]},
+    {id:'generate-doc', icon:'📄', name:'AI文书生成', tag:'real', tagText:'DeepSeek',
+     desc:'一键生成起诉状、答辩状、代理词等法律文书',
+     fields:[
+         {key:'doc_type', label:'文书类型', type:'select', options:['起诉状','答辩状','代理词','上诉状','申请书','其他']},
+         {key:'case_info', label:'案件信息（JSON）', type:'textarea', placeholder:'{"title":"合同纠纷","court":"朝阳法院"}'}
+    ]},
+    {id:'review-doc', icon:'📝', name:'AI文书审查', tag:'real', tagText:'DeepSeek',
+     desc:'智能审查法律文书，识别风险条款和逻辑漏洞',
+     fields:[
+         {key:'doc_content', label:'文书内容', type:'textarea', placeholder:'粘贴或输入需要审查的文书内容...'},
+         {key:'doc_type', label:'文书类型', type:'select', options:['合同','起诉状','答辩状','协议','其他']}
+    ]},
+    {id:'summary', icon:'📑', name:'AI阅卷摘要', tag:'real', tagText:'DeepSeek',
+     desc:'快速提取案卷材料核心信息，生成摘要报告',
+     fields:[
+         {key:'file_url', label:'文件URL或文本', type:'textarea', placeholder:'输入案卷材料URL或直接粘贴文本内容...'},
+         {key:'file_type', label:'材料类型', type:'select', options:['起诉状','证据材料','合同文件','判决书','其他']}
+    ]},
+    {id:'evidence', icon:'📎', name:'AI证据整理', tag:'real', tagText:'DeepSeek',
+     desc:'智能分析证据材料，生成证据清单和质证意见',
+     fields:[
+         {key:'evidence_list', label:'证据列表（JSON数组）', type:'textarea', placeholder:'[{"name":"合同原件","type":"书证","desc":"..."}]'},
+         {key:'case_id', label:'案件ID（选填）', type:'number', placeholder:'如：1'}
+    ]},
+    {id:'legal-search', icon:'⚖️', name:'AI法律检索', tag:'real', tagText:'DeepSeek',
+     desc:'基于案情的智能法律条文和案例检索',
+     fields:[
+         {key:'query', label:'检索关键词', type:'textarea', placeholder:'输入法律问题或关键词...'},
+         {key:'case_type', label:'案件类型', type:'select', options:['综合','合同','劳动','婚姻','知识产权','刑事','行政']}
+    ]},
+    {id:'class-case', icon:'📚', name:'AI类案推送', tag:'real', tagText:'DeepSeek',
+     desc:'基于案件特征推送相似案例和裁判观点',
+     fields:[
+         {key:'case_description', label:'案情描述', type:'textarea', placeholder:'输入案情描述以匹配相似案例...'}
+    ]},
+    {id:'trial-outline', icon:'📋', name:'AI庭审提纲', tag:'real', tagText:'DeepSeek',
+     desc:'自动生成庭审提纲，包含争议焦点和发问要点',
+     fields:[
+         {key:'case_description', label:'案情描述', type:'textarea', placeholder:'输入案情细节...'},
+         {key:'my_role', label:'我方角色', type:'select', options:['原告','被告','代理人','第三人']}
+    ]},
+    {id:'moot-court', icon:'🎭', name:'AI模拟法庭', tag:'real', tagText:'DeepSeek',
+     desc:'模拟法庭对抗，预测法官问题和对方策略',
+     fields:[
+         {key:'case_description', label:'案情描述', type:'textarea', placeholder:'输入完整案情...'},
+         {key:'my_role', label:'我方角色', type:'select', options:['原告','被告','代理人']},
+         {key:'my_claim', label:'我方诉求', type:'textarea', placeholder:'输入诉讼请求或答辩要点...'}
+    ]},
+    {id:'case-archive', icon:'📦', name:'AI归档报告', tag:'real', tagText:'DeepSeek',
+     desc:'自动生成结案归档报告，包含案件全流程摘要',
+     fields:[
+         {key:'case_title', label:'案件名称', type:'text', placeholder:'如：张三合同纠纷案'},
+         {key:'case_description', label:'案情经过', type:'textarea', placeholder:'输入案件全流程经过...'}
+    ]}
+];
+
+function getUser() {
+    try { return JSON.parse(localStorage.getItem(USER_KEY) || sessionStorage.getItem(USER_KEY) || '{}'); }
+    catch(e) { return {}; }
+}
+function showToast(msg) {
+    const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
+    clearTimeout(t._timer); t._timer=setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+// ==================== 渲染工具卡片 ====================
+function renderTools() {
+    const grid = document.getElementById('toolsGrid');
+    grid.innerHTML = tools.map(t => `
+        <div class="tool-card" onclick="selectTool('${t.id}')">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;">
+                <div class="tool-icon">${t.icon}</div>
+                <span class="tool-tag ${t.tag}">${t.tagText}</span>
+            </div>
+            <div class="tool-name">${t.name}</div>
+            <div class="tool-desc">${t.desc}</div>
+        </div>
+    `).join('');
+}
+
+// ==================== 选择工具 ====================
+function selectTool(toolId) {
+    const tool = tools.find(t => t.id === toolId);
+    if (!tool) return;
+
+    const panel = document.getElementById('toolPanel');
+    panel.style.display = '';
+
+    document.getElementById('panelIcon').textContent = tool.icon;
+    document.getElementById('panelTitle').textContent = tool.name;
+
+    let fieldsHtml = tool.fields.map(f => {
+        let input = '';
+        if (f.type === 'textarea') {
+            input = `<textarea id="input_${f.key}" placeholder="${f.placeholder}"></textarea>`;
+        } else if (f.type === 'select') {
+            input = `<select id="input_${f.key}">${f.options.map(o => `<option value="${o}">${o}</option>`).join('')}</select>`;
+        } else if (f.type === 'number') {
+            input = `<input type="number" id="input_${f.key}" placeholder="${f.placeholder}">`;
+        } else {
+            input = `<input type="text" id="input_${f.key}" placeholder="${f.placeholder}">`;
+        }
+        return `<div class="input-group"><label>${f.label}</label>${input}</div>`;
+    }).join('');
+
+    document.getElementById('panelBody').innerHTML = `
+        ${fieldsHtml}
+        <button class="btn-submit" id="submitBtn" onclick="submitTool('${toolId}')">
+            🚀 开始${tool.name}
+        </button>
+        <div class="result-area" id="resultArea">
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+                <span style="font-size:13px;color:var(--text-secondary);">📤 输出结果</span>
+                <button class="copy-btn" onclick="copyResult()">📋 复制</button>
+            </div>
+            <div class="result-box" id="resultBox"></div>
+        </div>
+    `;
+}
+
+// ==================== 提交工具 ====================
+async function submitTool(toolId) {
+    const tool = tools.find(t => t.id === toolId);
+    if (!tool) return;
+
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.textContent = '⏳ 处理中...';
+
+    const resultArea = document.getElementById('resultArea');
+    const resultBox = document.getElementById('resultBox');
+    resultArea.classList.add('show');
+    resultBox.className = 'result-box loading';
+    resultBox.innerHTML = '<div class="spinner-inline"></div> AI正在分析...';
+
+    try {
+        const user = getUser();
+        const uid = user.user_id || 1;
+
+        const body = { user_id: uid };
+        tool.fields.forEach(f => {
+            const el = document.getElementById(`input_${f.key}`);
+            if (el) {
+                let val = el.value.trim();
+                if (f.type === 'number') val = val ? parseInt(val) : null;
+                else if ((f.key === 'client_info' || f.key === 'case_info' || f.key === 'evidence_list') && val) {
+                    try { val = JSON.parse(val); } catch(e) { /* keep as string */ }
+                }
+                if (val !== '') body[f.key] = val;
+            }
+        });
+
+        const res = await fetch(`${API_BASE}/lawyer/ai/${toolId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+        const result = await res.json();
+
+        resultBox.className = 'result-box';
+
+        if (result.code === 200) {
+            const data = result.data;
+            if (typeof data === 'string') {
+                resultBox.textContent = data;
+            } else {
+                resultBox.textContent = JSON.stringify(data, null, 2);
+            }
+            resultBox.style.color = '';
+        } else {
+            resultBox.textContent = '❌ ' + (result.message || result.error || '调用失败');
+            resultBox.style.color = 'var(--error)';
+        }
+    } catch (e) {
+        const resultBox = document.getElementById('resultBox');
+        resultBox.className = 'result-box';
+        resultBox.textContent = '❌ 网络错误: ' + e.message;
+        resultBox.style.color = 'var(--error)';
+    } finally {
+        btn.disabled = false;
+        btn.textContent = '🚀 开始' + tool.name;
+    }
+}
+
+// ==================== 复制结果 ====================
+function copyResult() {
+    const box = document.getElementById('resultBox');
+    navigator.clipboard.writeText(box.textContent).then(() => {
+        showToast('✅ 已复制到剪贴板');
+    }).catch(() => {
+        showToast('❌ 复制失败');
+    });
+}
+
+// ==================== 清空面板 ====================
+function clearPanel() {
+    document.getElementById('toolPanel').style.display = 'none';
+}
+
+// ==================== 初始化 ====================
+renderTools();
+</script>
+</body>
+</html>
