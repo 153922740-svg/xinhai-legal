@@ -2146,3 +2146,302 @@ def agent_get_scripts_v1():
 @enterprise_v1_bp.route('/agent/card', methods=['GET'])
 def agent_get_card_v1():
     return agent_get_card()
+
+
+# ====================================================================
+# 阶段四：企微侧边栏服务商应用 — 5个API
+# ====================================================================
+
+# 企微OAuth配置（待总裁注册后填写）
+WECOM_CORP_ID = ''      # 企微企业ID
+WECOM_AGENT_ID = ''      # 企微应用AgentId
+WECOM_SECRET = ''        # 企微应用Secret
+
+"""辅助：获取企微access_token（缓存7200秒）"""
+def get_wecom_access_token():
+    if not WECOM_CORP_ID or not WECOM_SECRET:
+        return None
+    # 从缓存中获取
+    token = ConfigCache.get('wecom_access_token', lambda: None, ttl=7000)
+    if token:
+        return token
+    try:
+        import requests
+        r = requests.get(
+            f'https://qyapi.weixin.qq.com/cgi-bin/gettoken',
+            params={'corpid': WECOM_CORP_ID, 'corpsecret': WECOM_SECRET},
+            timeout=5
+        )
+        data = r.json()
+        if data.get('errcode') == 0:
+            token = data['access_token']
+            ConfigCache.get.cache['wecom_access_token'] = token
+            ConfigCache.ttl['wecom_access_token'] = time.time() + 7000
+            return token
+    except:
+        return None
+
+
+# ---------- ① 企微OAuth登录 ----------
+@enterprise_bp.route('/sidebar/auth', methods=['GET'])
+def sidebar_auth():
+    """企微OAuth2.0认证：从URL参数code换取userId"""
+    code = request.args.get('code', '').strip()
+    state = request.args.get('state', '').strip()
+    
+    if not code:
+        return jsonify({'error': '缺少授权码code', 'code': 400}), 400
+    
+    access_token = get_wecom_access_token()
+    if not access_token:
+        return jsonify({
+            'code': 200,
+            'message': '企微服务商未注册，使用开发模式',
+            'data': {'user_id': 'dev_user', 'auth_mode': 'dev'}
+        }), 200
+    
+    try:
+        r = requests.get(
+            f'https://qyapi.weixin.qq.com/cgi-bin/auth/getuserinfo',
+            params={'access_token': access_token, 'code': code},
+            timeout=5
+        )
+        data = r.json()
+        if data.get('errcode') == 0:
+            return jsonify({
+                'code': 200,
+                'data': {
+                    'user_id': data.get('UserId', ''),
+                    'user_ticket': data.get('user_ticket', ''),
+                    'openid': data.get('OpenId', ''),
+                    'auth_mode': 'wecom'
+                }
+            }), 200
+        else:
+            return jsonify({'error': '企微认证失败: ' + str(data.get("errmsg", "")), 'code': 401}), 401
+    except Exception as e:
+        return jsonify({'error': f'认证异常: {str(e)}', 'code': 500}), 500
+
+
+# ---------- ② 加载侧边栏 ----------
+@enterprise_bp.route('/sidebar/load', methods=['GET'])
+def sidebar_load():
+    """加载侧边栏首页数据：企业信息、快捷入口"""
+    user_id = request.args.get('user_id', '').strip()
+    
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+    
+    # 查找用户绑定的企业
+    cursor.execute("""
+        SELECT c.id, c.name, c.plan, c.status, c.plan_start, c.plan_end,
+               c.contract_review_used, c.contract_review_limit,
+               c.lawyer_visit_used
+        FROM enterprise_companies c
+        JOIN enterprise_user_bindings b ON b.enterprise_id = c.id
+        WHERE b.user_id = ? AND b.is_active = 1
+        LIMIT 1
+    """, (user_id,))
+    company = cursor.fetchone()
+    conn.close()
+    
+    if not company:
+        return jsonify({
+            'code': 200,
+            'data': {
+                'bound': False,
+                'quick_actions': [
+                    {'id': 'create', 'name': '创建企业', 'icon': 'building', 'url': '/enterprise/create'},
+                    {'id': 'bind', 'name': '绑定企业', 'icon': 'link', 'url': '/enterprise/bind'},
+                ]
+            }
+        }), 200
+    
+    # 计算剩余天数
+    days_left = 0
+    if company['plan_end']:
+        try:
+            end = datetime.strptime(company['plan_end'], '%Y-%m-%d')
+            days_left = (end - datetime.now()).days
+        except:
+            pass
+    
+    return jsonify({
+        'code': 200,
+        'data': {
+            'bound': True,
+            'company': {
+                'id': company['id'],
+                'name': company['name'],
+                'plan': company['plan'],
+                'status': company['status'],
+                'days_left': max(0, days_left),
+            },
+            'quick_actions': [
+                {'id': 'chat', 'name': '合同条款查询', 'icon': 'search', 'action': 'chat-query'},
+                {'id': 'law', 'name': '法律条文检索', 'icon': 'law', 'action': 'law-check'},
+                {'id': 'template', 'name': '常用模板', 'icon': 'file', 'action': 'templates'},
+                {'id': 'review', 'name': '合同审查', 'icon': 'check', 'url': '/enterprise/contract'},
+            ]
+        }
+    }), 200
+
+
+# ---------- ③ 合同条款查询 ----------
+@enterprise_bp.route('/sidebar/chat-query', methods=['POST'])
+def sidebar_chat_query():
+    """侧边栏查询合同条款（AI语义检索）"""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': '请求体为空', 'code': 400}), 400
+        
+        query = (data.get('query') or '').strip()
+        if not query or len(query) < 2:
+            return jsonify({'error': '查询内容至少2个字符', 'code': 400}), 400
+        
+        # 在当前企业常法的合同模板库中检索
+        conn = sqlite3.connect(DB_PATH)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        
+        cursor.execute(
+            "SELECT id, name, description, category FROM enterprise_templates WHERE content LIKE ? LIMIT 5",
+            (f'%{query}%',)
+        )
+        templates = cursor.fetchall()
+        
+        # 也检索合同审查历史
+        cursor.execute(
+            "SELECT id, file_name, risk_summary, created_at FROM enterprise_contract_reviews WHERE file_name LIKE ? OR risk_summary LIKE ? ORDER BY created_at DESC LIMIT 5",
+            (f'%{query}%', f'%{query}%')
+        )
+        reviews = cursor.fetchall()
+        conn.close()
+        
+        result = {
+            'query': query,
+            'templates': [{'id': t['id'], 'name': t['name'], 'desc': t['description'], 'category': t['category']} for t in templates],
+            'reviews': [{'id': r['id'], 'file_name': r['file_name'], 'summary': r['risk_summary']} for r in reviews],
+        }
+        
+        return jsonify({'code': 200, 'data': result}), 200
+        
+    except Exception as e:
+        return jsonify({'error': f'查询失败: {str(e)}', 'code': 500}), 500
+
+
+# ---------- ④ 法律条文检索 ----------
+@enterprise_bp.route('/sidebar/law-check', methods=['POST'])
+def sidebar_law_check():
+    """侧边栏查询法律条文"""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': '请求体为空', 'code': 400}), 400
+        
+        query = (data.get('query') or '').strip()
+        category = (data.get('category') or '').strip()
+        
+        if not query or len(query) < 2:
+            return jsonify({'error': '查询内容至少2个字符', 'code': 400}), 400
+        
+        conn = sqlite3.connect(DB_PATH)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        
+        sql = "SELECT id, review_id, risks_json, created_at FROM contract_review_results WHERE risks_json LIKE ?"
+        params = [f'%{query}%']
+        
+        if category:
+            sql += " AND review_types LIKE ?"
+            params.append(f'%{category}%')
+        
+        cursor.execute(sql + " ORDER BY created_at DESC LIMIT 10", params)
+        results = cursor.fetchall()
+        conn.close()
+        
+        return jsonify({
+            'code': 200,
+            'data': {
+                'query': query,
+                'category': category,
+                'results': [{'id': r['id'], 'review_id': r['review_id'], 'summary': (r['risks_json'] or '')[:200]} for r in results],
+                'total': len(results)
+            }
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': f'查询失败: {str(e)}', 'code': 500}), 500
+
+
+# ---------- ⑤ 常用模板列表（侧边栏版） ----------
+@enterprise_bp.route('/sidebar/templates', methods=['GET'])
+def sidebar_templates():
+    """侧边栏获取常用模板列表（精简版）"""
+    try:
+        category = request.args.get('category', '').strip()
+        limit = request.args.get('limit', 20, type=int)
+        
+        conn = sqlite3.connect(DB_PATH)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        
+        sql = "SELECT id, name, description, category FROM enterprise_templates"
+        params = []
+        if category:
+            sql += " WHERE category = ?"
+            params.append(category)
+        sql += " ORDER BY id ASC LIMIT ?"
+        params.append(limit)
+        
+        cursor.execute(sql, params)
+        rows = cursor.fetchall()
+        conn.close()
+        
+        # 按分类分组
+        categories = {}
+        for r in rows:
+            cat = r['category'] or '其他'
+            if cat not in categories:
+                categories[cat] = []
+            categories[cat].append({
+                'id': r['id'],
+                'name': r['name'],
+                'description': r['description']
+            })
+        
+        return jsonify({
+            'code': 200,
+            'data': {
+                'templates': [{'id': r['id'], 'name': r['name'], 'category': r['category']} for r in rows],
+                'categories': [{'name': k, 'items': v} for k, v in categories.items()],
+                'total': len(rows)
+            }
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': f'获取失败: {str(e)}', 'code': 500}), 500
+
+
+# ---------- v1兼容路由 ----------
+@enterprise_v1_bp.route('/sidebar/auth', methods=['GET'])
+def sidebar_auth_v1():
+    return sidebar_auth()
+
+@enterprise_v1_bp.route('/sidebar/load', methods=['GET'])
+def sidebar_load_v1():
+    return sidebar_load()
+
+@enterprise_v1_bp.route('/sidebar/chat-query', methods=['POST'])
+def sidebar_chat_query_v1():
+    return sidebar_chat_query()
+
+@enterprise_v1_bp.route('/sidebar/law-check', methods=['POST'])
+def sidebar_law_check_v1():
+    return sidebar_law_check()
+
+@enterprise_v1_bp.route('/sidebar/templates', methods=['GET'])
+def sidebar_templates_v1():
+    return sidebar_templates()
