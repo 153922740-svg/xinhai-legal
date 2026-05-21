@@ -15,14 +15,17 @@ import requests
 
 phase2_payment_bp = Blueprint('phase2_payment', __name__, url_prefix='/api/v2/payment')
 
-# 微信支付配置
+# 微信支付配置（从环境变量读取）
+from dotenv import load_dotenv
+load_dotenv('/home/admin/xinhai_legal_api/.env')
+
 WECHAT_CONFIG = {
-    'appid': 'wx1234567890abcdef',  # 小程序 AppID
-    'mchid': '1234567890',  # 商户号
-    'api_key': 'your_wechat_pay_api_key',  # API v3 密钥
-    'cert_path': '/home/admin/xinhai_legal_api/certs/apiclient_cert.pem',
-    'key_path': '/home/admin/xinhai_legal_api/certs/apiclient_key.pem',
-    'notify_url': 'https://xinclaw.law/api/v2/payment/wechat/notify',  # 支付回调地址
+    'appid': os.getenv('WECHAT_APPID', 'wx73612d8efb98658d'),  # 小程序 AppID
+    'mchid': os.getenv('WECHAT_MCHID', '1745164408'),  # 商户号
+    'api_key': os.getenv('WECHAT_APIKEY', 'Xinclaw2026xinhaifalvzixunxincla'),  # API v3 密钥
+    'cert_path': os.getenv('WECHAT_CERT_PATH', '/www/wwwroot/xinclaw-law/backend/cert/apiclient_cert.pem'),
+    'key_path': os.getenv('WECHAT_KEY_PATH', '/www/wwwroot/xinclaw-law/backend/cert/apiclient_key.pem'),
+    'notify_url': os.getenv('WECHAT_NOTIFY_URL', 'https://xinclaw.xhacca.cn/api/v1/payment/wechat/notify'),  # 支付回调地址
 }
 
 
@@ -95,9 +98,9 @@ def create_wechat_payment():
                 'data': None
             }), 400
         
-        order_id = data.get('order_id', type=int)
-        user_id = data.get('user_id', type=int)
-        amount = data.get('amount', type=float)
+        order_id = int(data.get('order_id', 0))
+        user_id = int(data.get('user_id', 0))
+        amount = float(data.get('amount', 0.0))
         description = data.get('description', '会员购买')
         openid = data.get('openid')
         
@@ -335,7 +338,7 @@ def apply_refund():
                 'data': None
             }), 400
         
-        order_id = data.get('order_id', type=int)
+        order_id = int(data.get('order_id', 0))
         reason = data.get('reason', '用户申请退款')
         refund_amount = data.get('amount')
         

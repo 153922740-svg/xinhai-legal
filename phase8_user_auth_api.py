@@ -12,7 +12,7 @@ import os
 phase8_bp = Blueprint('phase8', __name__)
 
 # 数据库路径
-DB_PATH = os.getenv('DB_PATH', '/home/admin/xinhai-legal/data/xinhai_legal.db')
+DB_PATH = os.getenv('DB_PATH', '/home/admin/xinhai_legal_api/data/xinhai_legal.db')
 
 # 验证码存储（内存，5 分钟有效）
 VERIFICATION_CODES = {}
